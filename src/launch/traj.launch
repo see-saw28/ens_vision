@@ -5,7 +5,7 @@
     <arg name="source" default="marker_2"/>
     <arg name="update_rate" default="10"/>
     <arg name="publish_rate" default="5"/>
-    <arg name="name" default="trajectory1"/>
+    <arg name="name" default="trajectory"/>
 
     <node name="hector_trajectory_server" pkg="hector_trajectory_server" type="hector_trajectory_server" output="screen" >
         <param name="target_frame_name" value="$(arg target)"/>

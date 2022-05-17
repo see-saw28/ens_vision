@@ -51,8 +51,8 @@ class TrajectoryInteractiveMarkers:
         self.marker.points.append(Point(*pos))
         
         self.marker.header=Header(frame_id='marker_0')
-        self.marker.color=ColorRGBA(*cm.jet(vit))
-        self.marker.colors.append(ColorRGBA(*cm.jet(vit)))
+        
+        self.marker.colors.append(ColorRGBA(*cm.turbo(vit)))
         self.marker_publisher.publish(self.marker)
         
         rospy.loginfo('msg published')
