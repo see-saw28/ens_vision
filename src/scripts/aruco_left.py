@@ -13,9 +13,10 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
 from std_msgs.msg import Header
+from sensor_msgs.msg import Image
 import tf
-
-
+from dynamic_reconfigure.server import Server
+from ens_vision.cfg import ArucoConfig
 
 
 # import the necessary packages
@@ -26,14 +27,15 @@ import cv2
 import sys
 import pyrealsense2 as rs
 import os
-
-
+from cv_bridge import CvBridge
 
 
 def aruco():
   
     br = tf.TransformBroadcaster()
     rospy.init_node('aruco_frame_publisher')
+    pubIR = rospy.Publisher('camera/IRLeft', Image, queue_size=10)
+    pubAruco = rospy.Publisher('aruco/IRLeft', Image, queue_size=10)
     rate = rospy.Rate(30) # 30hz
     
     
@@ -42,6 +44,16 @@ def aruco():
     
     while not rospy.is_shutdown():
         try :
+        
+            arucoParams.adaptiveThreshConstant=rospy.get_param('aruco_param/adaptiveThreshConstant')
+            arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco_param/minMarkerPerimeterRate')
+            arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco_param/polygonalApproxAccuracyRate')
+            arucoParams.cornerRefinementMethod=rospy.get_param('aruco_param/cornerRefinementMethod')
+            arucoParams.perspectiveRemovePixelPerCell=rospy.get_param('aruco_param/perspectiveRemovePixelPerCell')
+            arucoParams.maxErroneousBitsInBorderRate=rospy.get_param('aruco_param/maxErroneousBitsInBorderRate')
+            arucoParams.errorCorrectionRate=rospy.get_param('aruco_param/errorCorrectionRate')
+            
+            
         	# grab the frame from the threaded video stream and resize it
         	# Wait for a IR frame
             frames = pipeline.wait_for_frames()
@@ -54,9 +66,13 @@ def aruco():
             # Convert images to numpy arrays
             ir1_image = np.asanyarray(ir1_frame.get_data())
             
+            bridge = CvBridge()
+            image_message = bridge.cv2_to_imgmsg(ir1_image, encoding="passthrough")
+            pubIR.publish(image_message)
+            
             # Convert to RGB image for axis drawing
             gray = cv2.cvtColor(ir1_image, cv2.COLOR_GRAY2RGB)
-            
+           
             
         	# detect ArUco markers in the input frame
             (corners, ids, rejected) = cv2.aruco.detectMarkers(ir1_image,arucoDict, parameters=arucoParams)
@@ -149,7 +165,7 @@ def aruco():
 
                 
                          cv2.putText(gray, f'{tvec[0,0,2]:.3f}'+"m",(topLeft[0], topLeft[1] + 35),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
-                         print(f'{tvec[0,0,2]:.3f}'+"m")
+                         #print(f'{tvec[0,0,2]:.3f}'+"m")
                    
                          # draw axis for the aruco markers
                          cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
@@ -161,7 +177,11 @@ def aruco():
             print(exc_type, fname, exc_tb.tb_lineno)
             print(e)
             break
-    
+    	
+    	
+        bridge = CvBridge()
+        image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
+        pubAruco.publish(image_message)
         if draw:
         	# show the output frame
             cv2.imshow("IR Left", gray)
@@ -172,6 +192,8 @@ def aruco():
     	# if the `q` key was pressed, break from the loop
         if key == ord("q"):
             break
+            
+        
         rate.sleep() 
             
             

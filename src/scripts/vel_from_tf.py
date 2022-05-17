@@ -37,7 +37,7 @@ def navigation():
         moving_frame_id=sys.argv[2]
         
     
-    pub_freq = 3.0
+    pub_freq = 30.0
     rospy.init_node('vel_from_tf', anonymous=False)
     pub = rospy.Publisher(f'vel_from_tf/{moving_frame_id}', Twist, queue_size=2) 
     rate = rospy.Rate(pub_freq)
@@ -46,7 +46,7 @@ def navigation():
     while not rospy.is_shutdown():
         try:
 
-            tw = tl.lookupTwistFull(moving_frame_id, static_frame_id,moving_frame_id,(0,0,0),moving_frame_id,rospy.Time(0),rospy.Duration(0.1))
+            tw = tl.lookupTwistFull(moving_frame_id, static_frame_id,moving_frame_id,(0,0,0),moving_frame_id,rospy.Time(0),rospy.Duration(0.05))
             
             twist = Twist(Vector3(tw[0][0], tw[0][1], tw[0][2]),
               Vector3(tw[1][0], tw[1][1], tw[1][2]))

@@ -3,7 +3,7 @@
 <launch>
 	
 
-    <node name="aruco_detector" pkg="ens_voiture_autonome" type="aruco_left.py" output="screen" >
+    <node name="aruco_detector" pkg="ens_vision" type="aruco_left.py" output="screen" >
 	<param name="adaptiveThreshConstant" value="7" type="double"/>
 	<param name="minMarkerPerimeterRate" value="0.03" type="double"/>
 	<param name="polygonalApproxAccuracyRate" value="0.03" type="double"/>
@@ -15,7 +15,7 @@
 
             
     </node>
-
+ <node name="aruco_param" pkg="ens_vision" type="aruco_param.py" output="screen" />
 
 
 </launch>
