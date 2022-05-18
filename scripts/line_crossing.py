@@ -53,8 +53,8 @@ def navigation():
     ya=0
     A=complex(xa,ya)
     
-    xb=0
-    yb=1
+    xb=1
+    yb=0
     B=complex(xb,yb)
     AB=A-B
     BA=-AB

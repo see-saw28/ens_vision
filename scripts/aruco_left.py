@@ -182,7 +182,7 @@ def aruco():
         bridge = CvBridge()
         image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
         pubAruco.publish(image_message)
-        if draw:
+        if draw_cv2:
         	# show the output frame
             cv2.imshow("IR Left", gray)
             
@@ -240,8 +240,9 @@ if __name__ == '__main__':
         
         
         draw=True
+        draw_cv2=False
         print('start')
-        print("press 'q' to close")
+        # print("press 'q' to close")
         aruco()
     except rospy.ROSInterruptException:
         # do a bit of cleanup
