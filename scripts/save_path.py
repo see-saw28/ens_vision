@@ -69,8 +69,24 @@ def numpy_to_path(np_path):
         poses.append[pose]
     return msg
 
+
+def check_file(filePath):
+    if os.path.exists(filePath):
+        numb = 1
+        while True:
+            newPath = "{0}_{2}{1}".format(*os.path.splitext(filePath) + (numb,))
+            if os.path.exists(newPath):
+                numb += 1
+            else:
+                return newPath
+    return filePath  
+
+
 def callback(msg):
-    f = open('path.pckl', 'wb')
+    filename=check_file('path.pckl')
+    print(filename)
+    f = open(filename, 'wb')
+    
     pickle.dump(msg, f)
     f.close()
     print('Path saved with :',len(msg.poses), 'poses')
@@ -82,7 +98,7 @@ def callback(msg):
     #msg.pose = Pose(Point(x, y, 0.),Quaternion(*tf.transformations.quaternion_from_euler(roll, pitch, yaw)))
     
     
-            
+          
             
             
 

@@ -20,7 +20,7 @@ class TrajectoryInteractiveMarkers:
     def __init__(self):
         self.count = 0 
         # rospy.Subscriber("/arm_1/arm_controller/cartesian_velocity_command",TwistStamped, self.event_in_cb)
-        self.marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=5)
+        self.marker_publisher = rospy.Publisher('path_marker', Marker, queue_size=5)
         self.rate=rate = rospy.Rate(15)
         self.tl = tf.TransformListener()
         rospy.sleep(0.5)
@@ -32,15 +32,6 @@ class TrajectoryInteractiveMarkers:
         self.marker.header=Header(frame_id='marker_0')
         self.marker.pose=Pose(Point(0,0,0), Quaternion(0,0,0,1))
 
-    def event_in_cb(self,msg):
-        self.waypoints = msg
-        self.a = [1, 1, 1]
-        #self.a = list()
-        #self.a.append(self.waypoints.twist.linear.x)
-        #self.a.append(self.waypoints.twist.linear.y)
-        #self.a.append(self.waypoints.twist.linear.z)
-        
-        self.marker()
 
     def marker_from_tf(self):
         pos, quat = self.tl.lookupTransform('marker_0','marker_2',rospy.Time())

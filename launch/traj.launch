@@ -1,21 +1,21 @@
 <?xml version="1.0"?>
 
 <launch>
-	<arg name="target" default="marker_0"/>
-    <arg name="source" default="marker_2"/>
+	<arg name="ref" default="marker_0"/>
+    <arg name="car" default="marker_2"/>
     <arg name="update_rate" default="10"/>
     <arg name="publish_rate" default="5"/>
     <arg name="name" default="trajectory"/>
+    
+    <node pkg="tf" type="static_transform_publisher" name="map_nav_broadcaster" args="0.2 0 0 0 0 0  $(arg car) base_link $(arg update_rate)"/>
 
     <node name="hector_trajectory_server" pkg="hector_trajectory_server" type="hector_trajectory_server" output="screen" >
-        <param name="target_frame_name" value="$(arg target)"/>
-        <param name="source_frame_name" value="$(arg source)"/>
+        <param name="target_frame_name" value="$(arg ref)"/>
+        <param name="source_frame_name" value="$(arg car)"/>
         <param name="trajectory_update_rate" value="$(arg update_rate)"/>
         <param name="trajectory_publish_rate" value="$(arg publish_rate)"/>
         
         <remap from="trajectory" to="$(arg name)"/>
     </node>
-
-
 
 </launch>
