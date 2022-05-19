@@ -44,7 +44,9 @@ def aruco():
     
     while not rospy.is_shutdown():
         try :
-        
+            arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco_param/adaptiveThreshWinSizeMin')
+            arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco_param/adaptiveThreshWinSizeMax')
+            arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco_param/adaptiveThreshWinSizeStep')
             arucoParams.adaptiveThreshConstant=rospy.get_param('aruco_param/adaptiveThreshConstant')
             arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco_param/minMarkerPerimeterRate')
             arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco_param/polygonalApproxAccuracyRate')
@@ -92,7 +94,25 @@ def aruco():
             
             
             
-            
+            for rej in rejected:
+                 
+                 # extract the marker corners (which are always returned
+                # in top-left, top-right, bottom-right, and bottom-left
+       # order)
+                 corner = rej.reshape((4, 2))
+                 
+                 (topLeft, topRight, bottomRight, bottomLeft) = corner
+     
+                 # convert each of the (x, y)-coordinate pairs to integers
+                 topRight = (int(topRight[0]), int(topRight[1]))
+                 bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+                 bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+                 topLeft = (int(topLeft[0]), int(topLeft[1]))
+                 
+                 cv2.line(gray, topLeft, topRight, (0, 255, 255), 2)
+                 cv2.line(gray, topRight, bottomRight, (0, 255, 255), 2)
+                 cv2.line(gray, bottomRight, bottomLeft, (0, 255, 255), 2)
+                 cv2.line(gray, bottomLeft, topLeft, (0, 255, 255), 2)
         
         	# verify *at least* one ArUco marker was detected
             if len(corners) > 0:
@@ -119,8 +139,13 @@ def aruco():
                      cY = int((topLeft[1] + bottomRight[1]) / 2.0)
                      
                      
+                     if markerID==0:
+                         size=0.12
+                     else:
+                         size=0.08
+                     
                      # POSE ESTIMATION
-                     rvec, tvec ,_ = cv2.aruco.estimatePoseSingleMarkers(np.array(markerCorner), 0.08, mtx, dist)
+                     rvec, tvec ,_ = cv2.aruco.estimatePoseSingleMarkers(np.array(markerCorner), size, mtx, dist)
                                         
                      x,y,z=tvec[0][0]
                      a,b,c=rvec[0][0]
@@ -152,6 +177,10 @@ def aruco():
                          cv2.line(gray, topRight, bottomRight, (0, 255, 0), 2)
                          cv2.line(gray, bottomRight, bottomLeft, (0, 255, 0), 2)
                          cv2.line(gray, bottomLeft, topLeft, (0, 255, 0), 2)
+                         
+                         
+                         
+                         
              
              			# compute and draw the center (x, y)-coordinates of the
              			# ArUco marker
@@ -165,7 +194,7 @@ def aruco():
 
                 
                          cv2.putText(gray, f'{tvec[0,0,2]:.3f}'+"m",(topLeft[0], topLeft[1] + 35),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
-                         #print(f'{tvec[0,0,2]:.3f}'+"m")
+                         print(f'{tvec[0,0,2]:.3f}'+"m")
                    
                          # draw axis for the aruco markers
                          cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
