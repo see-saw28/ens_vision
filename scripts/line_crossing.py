@@ -75,7 +75,7 @@ def navigation():
     marker_publisher.publish(marker)
     
     old_ABxAP=0
-    
+    pub = rospy.Publisher('syscommand', String, queue_size=10)
     
     while not rospy.is_shutdown():
         try:
@@ -93,7 +93,11 @@ def navigation():
             if(dot(AB,AP)>0 and dot(BA,BP)>0):
                 
                 if (cros(AB,AP)*old_ABxAP<0):
-                    print('Line crossed')
+                    # print('Line crossed')
+                    msg=String()
+                    msg.data='lap'
+                    pub.publish(msg)
+                    
                 
                 old_ABxAP=cros(AB,AP)
 

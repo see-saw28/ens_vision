@@ -16,6 +16,8 @@
             
     </node>
  <node name="aruco_param" pkg="ens_vision" type="aruco_param.py" output="screen" />
+ 
+ <node name="line_crossing" pkg="ens_vision" type="line_crossing.py" output="screen" />
 
 <node pkg="rviz" type="rviz" name="rviz"
 	    args="-d $(find ens_vision)/rviz/aruco_path.rviz"/>

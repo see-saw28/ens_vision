@@ -69,13 +69,8 @@ def numpy_to_path(np_path):
         poses.append[pose]
     return msg
 
-def callback(msg):
-    f = open('path.pckl', 'wb')
-    pickle.dump(msg, f)
-    f.close()
-    print('Path saved with :',len(msg.poses), 'poses')
+
     
-    rate.sleep()
 
 def distance(msg):
     i=0
@@ -93,6 +88,10 @@ def distance(msg):
             
             dist=np.sqrt((x-old_x)**2+(y-old_y)**2+(z-old_z)**2)
             distance+=dist
+            
+            old_x=x
+            old_y=y
+            old_z=z
         i+=1
         
     return distance
@@ -108,7 +107,7 @@ def distance(msg):
 if __name__ == '__main__':
     
     
-    f = open('path.pckl', 'rb')
+    f = open('path_2.pckl', 'rb')
     msg = pickle.load(f)
     f.close()
     

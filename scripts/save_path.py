@@ -14,6 +14,8 @@ import numpy as np
 from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
+from visualization_msgs.msg import Marker
+
 import tf
 
 
@@ -83,13 +85,13 @@ def check_file(filePath):
 
 
 def callback(msg):
-    filename=check_file('path.pckl')
+    filename=check_file('paths/path.pckl')
     print(filename)
     f = open(filename, 'wb')
     
     pickle.dump(msg, f)
     f.close()
-    print('Path saved with :',len(msg.poses), 'poses')
+    print('Path saved with :',len(msg.points), 'poses')
     
     rate.sleep()
 
@@ -107,7 +109,7 @@ if __name__ == '__main__':
     rospy.init_node('path_saver')
     rate = rospy.Rate(0.05)
     try:
-        rospy.Subscriber("/trajectory", Path, callback)
+        rospy.Subscriber("/path_marker", Marker, callback)
         rospy.spin()
         
     except rospy.ROSInterruptException:

@@ -13,6 +13,8 @@ Panels:
         - /Marker1
         - /Axes4
         - /Axes5
+        - /Marker2
+        - /Marker4
       Splitter Ratio: 0.5
     Tree Height: 374
   - Class: rviz/Selection
@@ -115,7 +117,7 @@ Visualization Manager:
       Marker Topic: /finish_line
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Image
@@ -149,11 +151,27 @@ Visualization Manager:
       Show Trail: false
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /path_marker
       Name: Marker
       Namespaces:
         {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /current_lap_marker
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /lap_1_marker
+      Name: Marker
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -192,17 +210,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.13653047382831573
-        Y: -0.19956722855567932
-        Z: 0.4394628405570984
+        X: 0.06731511652469635
+        Y: -0.12873958051204681
+        Z: 0.28375351428985596
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.42039754986763
+      Pitch: 0.5653976202011108
       Target Frame: <Fixed Frame>
-      Yaw: 1.858608365058899
+      Yaw: 2.4136109352111816
     Saved: ~
 Window Geometry:
   Displays:
@@ -223,4 +241,4 @@ Window Geometry:
     collapsed: true
   Width: 1129
   X: 72
-  Y: 155
+  Y: 81

@@ -14,6 +14,8 @@ import numpy as np
 from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
+from visualization_msgs.msg import Marker
+
 import tf
 
 
@@ -30,7 +32,7 @@ import os
 import pickle
 
 def path():
-    pub = rospy.Publisher('trajectory', Path, queue_size=10)
+    pub = rospy.Publisher('path_marker', Marker, queue_size=10)
     rospy.init_node('ros_path', anonymous=False)
     rate = rospy.Rate(10)
 
@@ -40,12 +42,12 @@ def path():
 
     while not rospy.is_shutdown():
 
-        f = open('path.pckl', 'rb')
+        f = open('paths/path_22.pckl', 'rb')
         obj = pickle.load(f)
         f.close()
 
         pub.publish(obj)
-        print(len(obj.poses))
+        print(len(obj.points))
         rate.sleep()
 
 if __name__ == '__main__':
