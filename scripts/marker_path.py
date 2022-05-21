@@ -34,13 +34,18 @@ class TrajectoryInteractiveMarkers:
 
 
     def callback(self,msg):
-        if(msg.data=="reset"):
+        msg=msg.data.split(" ")
+        if(msg[0]=="reset"):
             self.marker = self.init_marker()
             
-        elif (msg.data=="save"):
+            if(len(msg)>1 and msg[1]=="all"):
+            
+                self.laps=[]
+            
+        elif (msg[0]=="save"):
             print('path saved')
             
-        elif (msg.data=="lap"):
+        elif (msg[0]=="lap"):
             # current_time=rospy.Time.now().to_sec()
             # lap_time = current_time - self.time
             # self.time = current_time
@@ -55,7 +60,7 @@ class TrajectoryInteractiveMarkers:
             
     def init_marker(self):
         marker = Marker()     
-        marker.header=Header(frame_id='marker_0',stamp=rospy.Time.now())
+        marker.header=Header(frame_id='marker_2',stamp=rospy.Time.now())
         marker.type=Marker.LINE_STRIP
         marker.lifetime=rospy.Duration(100)
         marker.scale=Vector3(0.01, 0.01, 0.01)
@@ -88,16 +93,16 @@ class TrajectoryInteractiveMarkers:
         return distance
 
     def marker_from_tf(self):
-        pos, quat = self.tl.lookupTransform('marker_0','marker_2',rospy.Time())
-        lin, ang = self.tl.lookupTwist('marker_2', 'marker_0', rospy.Time(), rospy.Duration(0.1))
+        pos, quat = self.tl.lookupTransform('marker_2','marker_0',rospy.Time())
+        lin, ang = self.tl.lookupTwist('marker_0', 'marker_2', rospy.Time(), rospy.Duration(0.1))
         vit=np.linalg.norm(lin)
         
         
         self.marker.points.append(Point(*pos))
-        self.marker.colors.append(ColorRGBA(*cm.turbo(vit)))
+        self.marker.colors.append(ColorRGBA(*cm.turbo(vit/4)))
         
         self.lap_marker.points.append(Point(*pos))
-        self.lap_marker.colors.append(ColorRGBA(*cm.turbo(vit)))
+        self.lap_marker.colors.append(ColorRGBA(*cm.turbo(vit/4)))
         
         self.marker_publisher.publish(self.marker)
         self.current_lap_publisher.publish(self.lap_marker)

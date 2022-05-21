@@ -35,8 +35,8 @@ def cros(A,B):
     return (A.real*B.imag-A.imag*B.real)
 
 def navigation():
-    static_frame_id="marker_0"
-    moving_frame_id="marker_2"
+    static_frame_id="marker_2"
+    moving_frame_id="marker_0"
     
     if (len(sys.argv)>2):
         static_frame_id=sys.argv[1]
@@ -64,7 +64,7 @@ def navigation():
     marker.type=Marker.LINE_STRIP
     marker.lifetime=rospy.Duration(100)
     marker.scale=Vector3(0.01, 0.01, 0.01)
-    marker.header=Header(frame_id='marker_0')
+    marker.header=Header(frame_id='marker_2')
     marker.pose=Pose(Point(0,0,0), Quaternion(0,0,0,1))
     
     
@@ -80,7 +80,7 @@ def navigation():
     while not rospy.is_shutdown():
         try:
 
-            pos, quat = tl.lookupTransform('marker_0','marker_2',rospy.Time())
+            pos, quat = tl.lookupTransform('marker_2','marker_0',rospy.Time())
             
             xp, yp,_=pos
             

@@ -36,6 +36,7 @@ def path():
     
     f = open('tf.pckl', 'rb')
     pos,quat = pickle.load(f)
+    print(pos,quat)
     f.close()
 	
 

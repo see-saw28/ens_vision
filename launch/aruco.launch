@@ -3,7 +3,12 @@
 <launch>
 	
 
-    <node name="aruco_detector" pkg="ens_vision" type="aruco_left.py" output="screen" >
+    <node name="aruco_detector" pkg="ens_vision" type="aruco_left.py" output="screen" />
+    	
+ <node name="aruco_param" pkg="ens_vision" type="aruco_param.py" output="screen" >
+ <param name="adaptiveThreshWinSizeMin" value="3"/>
+    	<param name="adaptiveThreshWinSizeMax" value="23" />
+    	<param name="adaptiveThreshWinSizeStep" value="5" />
 	<param name="adaptiveThreshConstant" value="7" type="double"/>
 	<param name="minMarkerPerimeterRate" value="0.03" type="double"/>
 	<param name="polygonalApproxAccuracyRate" value="0.03" type="double"/>
@@ -15,8 +20,6 @@
 
             
     </node>
- <node name="aruco_param" pkg="ens_vision" type="aruco_param.py" output="screen" />
- 
  <node name="line_crossing" pkg="ens_vision" type="line_crossing.py" output="screen" />
 
 <node pkg="rviz" type="rviz" name="rviz"

@@ -92,27 +92,27 @@ def aruco():
 
             dist = np.array( intr.coeffs )
             
+            if debug:
             
-            
-            for rej in rejected:
-                 
-                 # extract the marker corners (which are always returned
-                # in top-left, top-right, bottom-right, and bottom-left
-       # order)
-                 corner = rej.reshape((4, 2))
-                 
-                 (topLeft, topRight, bottomRight, bottomLeft) = corner
-     
-                 # convert each of the (x, y)-coordinate pairs to integers
-                 topRight = (int(topRight[0]), int(topRight[1]))
-                 bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-                 bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-                 topLeft = (int(topLeft[0]), int(topLeft[1]))
-                 
-                 cv2.line(gray, topLeft, topRight, (0, 255, 255), 2)
-                 cv2.line(gray, topRight, bottomRight, (0, 255, 255), 2)
-                 cv2.line(gray, bottomRight, bottomLeft, (0, 255, 255), 2)
-                 cv2.line(gray, bottomLeft, topLeft, (0, 255, 255), 2)
+                for rej in rejected:
+                     
+                     # extract the marker corners (which are always returned
+                    # in top-left, top-right, bottom-right, and bottom-left
+           # order)
+                     corner = rej.reshape((4, 2))
+                     
+                     (topLeft, topRight, bottomRight, bottomLeft) = corner
+         
+                     # convert each of the (x, y)-coordinate pairs to integers
+                     topRight = (int(topRight[0]), int(topRight[1]))
+                     bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+                     bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+                     topLeft = (int(topLeft[0]), int(topLeft[1]))
+                     
+                     cv2.line(gray, topLeft, topRight, (0, 255, 255), 2)
+                     cv2.line(gray, topRight, bottomRight, (0, 255, 255), 2)
+                     cv2.line(gray, bottomRight, bottomLeft, (0, 255, 255), 2)
+                     cv2.line(gray, bottomLeft, topLeft, (0, 255, 255), 2)
         
         	# verify *at least* one ArUco marker was detected
             if len(corners) > 0:
@@ -270,6 +270,7 @@ if __name__ == '__main__':
         
         draw=True
         draw_cv2=False
+        debug=False
         print('start')
         # print("press 'q' to close")
         aruco()
