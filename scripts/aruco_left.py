@@ -257,7 +257,7 @@ if __name__ == '__main__':
             exit(0)
 
         #%% enable streams
-        config.enable_stream(rs.stream.infrared, 1, 1280,720, rs.format.y8, 15)
+        config.enable_stream(rs.stream.infrared, 1, 1280,720, rs.format.y8, 30)
         #config.enable_stream(rs.stream.infrared, 2, 1280,800, rs.format.y8, 6)
 
 	# Start streaming
@@ -269,8 +269,8 @@ if __name__ == '__main__':
         
         
         draw=True
-        draw_cv2=False
-        debug=False
+        draw_cv2=True
+        debug=True
         print('start')
         # print("press 'q' to close")
         aruco()

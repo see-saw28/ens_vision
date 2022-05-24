@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Mon May 23 16:31:46 2022
+
+@author: student
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Fri May 13 21:08:12 2022
 
 @author: paul
@@ -32,7 +39,7 @@ import os
 import pickle
 
 def path(filename='path'):
-    pub = rospy.Publisher('trajectory', Path, queue_size=10)
+    pub = rospy.Publisher('path_marker', Marker, queue_size=10)
     rospy.init_node('ros_path', anonymous=False)
     rate = rospy.Rate(10)
 
@@ -47,7 +54,7 @@ def path(filename='path'):
         f.close()
 
         pub.publish(obj)
-        # print(len(obj.points))
+        print(len(obj.points))
         rate.sleep()
 
 if __name__ == '__main__':

@@ -29,8 +29,8 @@ from geometry_msgs.msg import Vector3
 # valid sample to a sample 0.5 seconds before that
 
 def navigation():
-    static_frame_id="marker_0"
-    moving_frame_id="marker_2"
+    static_frame_id="camera_odom_frame"
+    moving_frame_id="camera_pose_frame"
     
     if (len(sys.argv)>2):
         static_frame_id=sys.argv[1]
@@ -39,7 +39,7 @@ def navigation():
     
     pub_freq = 30.0
     rospy.init_node('vel_from_tf', anonymous=False)
-    pub = rospy.Publisher(f'vel_from_tf/{moving_frame_id}', Twist, queue_size=2) 
+    pub = rospy.Publisher('vel', Twist, queue_size=2) 
     rate = rospy.Rate(pub_freq)
     tl = tf.TransformListener()
     
@@ -48,8 +48,10 @@ def navigation():
 
             tw = tl.lookupTwistFull(moving_frame_id, static_frame_id,moving_frame_id,(0,0,0),moving_frame_id,rospy.Time(0),rospy.Duration(0.05))
             
-            twist = Twist(Vector3(tw[0][0], tw[0][1], tw[0][2]),
-              Vector3(tw[1][0], tw[1][1], tw[1][2]))
+            #twist = Twist(Vector3(tw[0][0], tw[0][1], tw[0][2]),
+             # Vector3(tw[1][0], tw[1][1], tw[1][2]))
+              
+            twist = Twist(Vector3(np.sqrt(tw[0][0]**2+ tw[0][1]**2+ tw[0][2]**2),0,0), Vector3(tw[1][0], tw[1][1], tw[1][2]))
 
             
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:

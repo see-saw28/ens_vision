@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Mon May 23 16:28:05 2022
+
+@author: student
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Fri May 13 21:08:12 2022
 
 @author: paul
@@ -46,14 +53,13 @@ def check_file(filePath):
 
 
 def callback(msg):
-    filename=check_file('paths/path.pckl')
+    filename=check_file('paths/custom_path.pckl')
     print(filename)
     f = open(filename, 'wb')
     
     pickle.dump(msg, f)
     f.close()
-    # print('Path saved with :',len(msg.points), 'poses')
-    print('saved')
+    print('Path saved with :',len(msg.points), 'poses')
     
     rate.sleep()
 
@@ -68,10 +74,10 @@ def callback(msg):
 
 if __name__ == '__main__':
 
-    rospy.init_node('path_saver')
+    rospy.init_node('custom_path_saver')
     rate = rospy.Rate(0.05)
     try:
-        rospy.Subscriber("/trajectory", Path, callback)
+        rospy.Subscriber("/path_marker", Marker, callback)
         rospy.spin()
         
     except rospy.ROSInterruptException:
