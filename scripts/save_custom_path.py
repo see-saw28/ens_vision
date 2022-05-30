@@ -77,7 +77,7 @@ if __name__ == '__main__':
     rospy.init_node('custom_path_saver')
     rate = rospy.Rate(0.05)
     try:
-        rospy.Subscriber("/path_marker", Marker, callback)
+        rospy.Subscriber("/trajectory", Marker, callback)
         rospy.spin()
         
     except rospy.ROSInterruptException:

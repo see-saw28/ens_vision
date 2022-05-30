@@ -35,8 +35,14 @@ def cros(A,B):
     return (A.real*B.imag-A.imag*B.real)
 
 def navigation():
-    static_frame_id="marker_2"
-    moving_frame_id="marker_0"
+    static_frame_id="map"
+    moving_frame_id="base_link"
+    
+    # static_frame_id="camera_odom_frame"
+    # moving_frame_id="camera_pose_frame"
+    
+    
+    
     
     if (len(sys.argv)>2):
         static_frame_id=sys.argv[1]
@@ -50,26 +56,28 @@ def navigation():
     tl = tf.TransformListener()
     
     xa=0
-    ya=0
+    ya=-1.8
     A=complex(xa,ya)
     
-    xb=1
-    yb=0
+    xb=0
+    yb=-3
     B=complex(xb,yb)
     AB=A-B
     BA=-AB
+    
+    
     
     marker_publisher = rospy.Publisher('finish_line', Marker, queue_size=5)
     marker = Marker()
     marker.type=Marker.LINE_STRIP
     marker.lifetime=rospy.Duration(100)
-    marker.scale=Vector3(0.01, 0.01, 0.01)
-    marker.header=Header(frame_id='marker_2')
+    marker.scale=Vector3(0.1, 0.01, 0.01)
+    marker.header=Header(frame_id=static_frame_id)
     marker.pose=Pose(Point(0,0,0), Quaternion(0,0,0,1))
     
     
     marker.points=[Point(xa,ya,0),Point(xb,yb,0)]
-    couleur=ColorRGBA(1,0,0,1)
+    couleur=ColorRGBA(0,0,1,1)
     marker.colors=[couleur,couleur]
     
     marker_publisher.publish(marker)
@@ -77,10 +85,12 @@ def navigation():
     old_ABxAP=0
     pub = rospy.Publisher('syscommand', String, queue_size=10)
     
+    print('a')
+    
     while not rospy.is_shutdown():
         try:
 
-            pos, quat = tl.lookupTransform('marker_2','marker_0',rospy.Time())
+            pos, quat = tl.lookupTransform(static_frame_id,moving_frame_id,rospy.Time())
             
             xp, yp,_=pos
             
@@ -99,7 +109,7 @@ def navigation():
                     pub.publish(msg)
                     
                 
-                old_ABxAP=cros(AB,AP)
+            old_ABxAP=cros(AB,AP)
 
             
             marker_publisher.publish(marker)
