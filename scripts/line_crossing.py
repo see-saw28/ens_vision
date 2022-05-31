@@ -56,11 +56,11 @@ def navigation():
     tl = tf.TransformListener()
     
     xa=0
-    ya=-1.8
+    ya=2.2
     A=complex(xa,ya)
     
     xb=0
-    yb=-3
+    yb=3.5
     B=complex(xb,yb)
     AB=A-B
     BA=-AB
