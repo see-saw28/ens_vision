@@ -19,6 +19,8 @@ from dynamic_reconfigure.server import Server
 from ens_vision.cfg import ArucoConfig
 
 
+
+
 # import the necessary packages
 from imutils.video import VideoStream
 import argparse
@@ -29,12 +31,33 @@ import pyrealsense2 as rs
 import os
 from cv_bridge import CvBridge
 
+def file_constante(liste,element,longueur):
+    liste.append(element)
+    if len(liste)>longueur:
+        liste.pop(0)
+    return liste
+    
+        
+def callback(config, level):
+            
+            rospy.loginfo("""Reconfigure Request: {adaptiveThreshConstant}, {minMarkerPerimeterRate},{polygonalApproxAccuracyRate}, {perspectiveRemovePixelPerCell}, {maxErroneousBitsInBorderRate}""".format(**config))
+            
+            return config
+
+def img_callback(data):
+    global ir1_image
+    bridge = CvBridge()
+    ir1_image = bridge.imgmsg_to_cv2(data, encoding="passthrough")
+    print(type(ir1_image))
 
 def aruco():
   
+    global bruit_aruco
+    global bruit_realsense
     br = tf.TransformBroadcaster()
     rospy.init_node('aruco_frame_publisher')
-    pubIR = rospy.Publisher('camera/IRLeft', Image, queue_size=10)
+    pubIR = rospy.Subscriber('/camera/infra1/image_rect_raw', Image, img_callback)
+    srv = Server(ArucoConfig, callback)
     pubAruco = rospy.Publisher('aruco/IRLeft', Image, queue_size=10)
     rate = rospy.Rate(30) # 30hz
     
@@ -44,33 +67,19 @@ def aruco():
     
     while not rospy.is_shutdown():
         try :
-            arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco_param/adaptiveThreshWinSizeMin')
-            arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco_param/adaptiveThreshWinSizeMax')
-            arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco_param/adaptiveThreshWinSizeStep')
-            arucoParams.adaptiveThreshConstant=rospy.get_param('aruco_param/adaptiveThreshConstant')
-            arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco_param/minMarkerPerimeterRate')
-            arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco_param/polygonalApproxAccuracyRate')
-            arucoParams.cornerRefinementMethod=rospy.get_param('aruco_param/cornerRefinementMethod')
-            arucoParams.perspectiveRemovePixelPerCell=rospy.get_param('aruco_param/perspectiveRemovePixelPerCell')
-            arucoParams.maxErroneousBitsInBorderRate=rospy.get_param('aruco_param/maxErroneousBitsInBorderRate')
-            arucoParams.errorCorrectionRate=rospy.get_param('aruco_param/errorCorrectionRate')
+            arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco/adaptiveThreshWinSizeMin')
+            arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco/adaptiveThreshWinSizeMax')
+            arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco/adaptiveThreshWinSizeStep')
+            arucoParams.adaptiveThreshConstant=rospy.get_param('aruco/adaptiveThreshConstant')
+            arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco/minMarkerPerimeterRate')
+            arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco/polygonalApproxAccuracyRate')
+            arucoParams.cornerRefinementMethod=rospy.get_param('aruco/cornerRefinementMethod')
+            arucoParams.perspectiveRemovePixelPerCell=rospy.get_param('aruco/perspectiveRemovePixelPerCell')
+            arucoParams.maxErroneousBitsInBorderRate=rospy.get_param('aruco/maxErroneousBitsInBorderRate')
+            arucoParams.errorCorrectionRate=rospy.get_param('aruco/errorCorrectionRate')
             
             
-        	# grab the frame from the threaded video stream and resize it
-        	# Wait for a IR frame
-            frames = pipeline.wait_for_frames()
-            ir1_frame = frames.get_infrared_frame(1)
-           
-            
-            if not ir1_frame :
-                continue
-            
-            # Convert images to numpy arrays
-            ir1_image = np.asanyarray(ir1_frame.get_data())
-            
-            bridge = CvBridge()
-            image_message = bridge.cv2_to_imgmsg(ir1_image, encoding="passthrough")
-            pubIR.publish(image_message)
+       
             
             # Convert to RGB image for axis drawing
             gray = cv2.cvtColor(ir1_image, cv2.COLOR_GRAY2RGB)
@@ -140,7 +149,7 @@ def aruco():
                      
                      
                      if markerID==0:
-                         size=0.12
+                         size=0.08
                      else:
                          size=0.08
                      
@@ -192,9 +201,13 @@ def aruco():
                          # draw the ArUco marker ID on the frame
                          
 
-                
+                        
                          cv2.putText(gray, f'{tvec[0,0,2]:.3f}'+"m",(topLeft[0], topLeft[1] + 35),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
+                         
                          print(f'{tvec[0,0,2]:.3f}'+"m")
+                             
+                         
+                         
                    
                          # draw axis for the aruco markers
                          cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
@@ -235,38 +248,9 @@ if __name__ == '__main__':
         arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
         arucoParams = cv2.aruco.DetectorParameters_create()
         
-	# Configure depth and color streams
-        pipeline = rs.pipeline()
-        config = rs.config()
-        rs.option.laser_power=0
-
-	# Get device product line for setting a supporting resolution
-        pipeline_wrapper = rs.pipeline_wrapper(pipeline)
-        pipeline_profile = config.resolve(pipeline_wrapper)
-        device = pipeline_profile.get_device()
-        device_product_line = str(device.get_info(rs.camera_info.product_line))
-
-        found_rgb = False
-
-        for s in device.sensors:
-            if s.get_info(rs.camera_info.name) == 'RGB Camera':
-                found_rgb = True
-                break
-        if not found_rgb:
-            print("The demo requires Depth camera with Color sensor")
-            exit(0)
-
-        #%% enable streams
-        config.enable_stream(rs.stream.infrared, 1, 1280,720, rs.format.y8, 30)
-        #config.enable_stream(rs.stream.infrared, 2, 1280,800, rs.format.y8, 6)
-
-	# Start streaming
-        cfg = pipeline.start(config)
-        
-        # unenable the laser
-        depth_sensor = cfg.get_device().first_depth_sensor()
-        depth_sensor.set_option(rs.option.emitter_enabled, 0)
-        
+	
+        bruit_aruco = []
+        bruit_realsense = []
         
         draw=True
         draw_cv2=True
@@ -277,5 +261,4 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         # do a bit of cleanup
         cv2.destroyAllWindows()
-        pipeline.stop()
         pass

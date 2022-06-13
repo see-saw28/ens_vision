@@ -58,7 +58,7 @@ def svd_transform(si,di):
     return (R,T,df)
 
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # import yaml
 
 # a_yaml_file = open("map1.yaml")

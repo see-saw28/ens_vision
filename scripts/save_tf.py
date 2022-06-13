@@ -60,7 +60,7 @@ if __name__ == '__main__':
             filename=check_file('tf.pckl')
             print(filename)
             f = open(filename, 'wb')
-            pickle.dump([pos,quat], f)
+            pickle.dump([pos,quat,map_frame_id, marker_frame_id], f)
             f.close()
             print('Tf saved')
             break

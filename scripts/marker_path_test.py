@@ -10,6 +10,7 @@ import tf
 import pickle
 import os
 import rospkg
+import sys
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import TwistStamped, Pose, Point, Vector3, Quaternion, Twist
 from std_msgs.msg import Header, ColorRGBA, String
@@ -42,10 +43,12 @@ class LapMarkers:
         self.rate= rospy.Rate(90)
         self.tl = tf.TransformListener()
         rospy.sleep(0.5)
+        
         if len(marker.points)==0:
             self.marker = self.init_marker()
         else:
             self.marker = marker
+            
         self.time = rospy.Time.now().to_sec()
         if len(speeds)==0:
             self.speeds=[]
@@ -131,7 +134,7 @@ class TrajectoryMarkers:
         self.static_frame = static_frame
         self.moving_frame = moving_frame
         # rospy.Subscriber("/arm_1/arm_controller/cartesian_velocity_command",TwistStamped, self.event_in_cb)
-        self.traj_marker = LapMarkers('trajectory',static_frame=self.static_frame,moving_frame=self.moving_frame)
+        self.traj_marker = LapMarkers('trajectory_marker',static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.traj_loaded_marker = LapMarkers('trajectory_loaded',static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.current_lap_marker = LapMarkers('current_lap_marker',static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.laps_markers = []
@@ -221,7 +224,13 @@ class TrajectoryMarkers:
 if __name__ == '__main__':
     rospy.init_node("trajectory_markers_node", anonymous=True)
     rospack = rospkg.RosPack()
-    trajectory_interactive_markers = TrajectoryMarkers(static_frame='map', moving_frame='base_link')
+    if (len(sys.argv)>2):
+        static_frame_id=sys.argv[1]
+        moving_frame_id=sys.argv[2]
+        trajectory_interactive_markers = TrajectoryMarkers(static_frame=static_frame_id, moving_frame=moving_frame_id)
+    else :
+        
+        trajectory_interactive_markers = TrajectoryMarkers(static_frame='map', moving_frame='base_link')
     while not rospy.is_shutdown():
         try:
 

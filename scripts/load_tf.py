@@ -34,8 +34,13 @@ def path():
 
     br = tf.TransformBroadcaster()
     
-    f = open('tf.pckl', 'rb')
-    pos,quat = pickle.load(f)
+    map_name = 'svd'
+    
+    import rospkg
+    rospack = rospkg.RosPack()
+    
+    f = open(rospack.get_path('ens_voiture_autonome')+f'/tf/{map_name}.pckl', 'rb')
+    pos,quat,map_frame_id, marker_frame_id = pickle.load(f)
     print(pos,quat)
     f.close()
 	
@@ -51,12 +56,12 @@ def path():
 
 if __name__ == '__main__':
     try:
-        marker_frame_id="marker_0"
-        map_frame_id="marker_1"
+        # marker_frame_id="camera"
+        # map_frame_id="map"
         
-        if (len(sys.argv)>2):
-            marker_frame_id=sys.argv[1]
-            map_frame_id=sys.argv[2]
+        # if (len(sys.argv)>2):
+        #     marker_frame_id=sys.argv[1]
+        #     map_frame_id=sys.argv[2]
         path()
     except rospy.ROSInterruptException:
         pass

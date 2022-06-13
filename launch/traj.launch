@@ -1,10 +1,7 @@
 <?xml version="1.0"?>
 
 <launch>
-
-
-    <node name="trajectory_marker" pkg="ens_vision" type="marker_path_test.py" output="screen" />
     <node name="line_crossing" pkg="ens_vision" type="line_crossing.py" output="screen" />
-   
-
+    <node name="trajectory_marker" pkg="ens_vision" type="marker_path_test.py" output="screen" />
+    
 </launch>

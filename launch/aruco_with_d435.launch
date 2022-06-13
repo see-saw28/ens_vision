@@ -2,9 +2,8 @@
 
 <launch>
 	
-<include file="$(find ens_vision)/launch/d435.launch"/>
 
-<node name="aruco" pkg="ens_vision" type="aruco.py" output="screen" >
+<node name="aruco" pkg="ens_vision" type="aruco_with_d435.py" output="screen" >
  	<param name="adaptiveThreshWinSizeMin" value="3"/>
     	<param name="adaptiveThreshWinSizeMax" value="23" />
     	<param name="adaptiveThreshWinSizeStep" value="5" />
@@ -17,8 +16,6 @@
 	<param name="errorCorrectionRate" value="0.6" type="double"/>         
 </node>
 <!-- <node name="line_crossing" pkg="ens_vision" type="line_crossing.py" output="screen" />-->
-
-
 
 <node pkg="rviz" type="rviz" name="rviz"
 	    args="-d $(find ens_vision)/rviz/aruco_path.rviz"/>
