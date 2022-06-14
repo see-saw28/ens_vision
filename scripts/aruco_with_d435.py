@@ -171,7 +171,7 @@ def aruco():
                      
                      
                      if markerID==0:
-                         size=0.08
+                         size=0.12
                      else:
                          size=0.08
                      
