@@ -13,7 +13,7 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
 from std_msgs.msg import Header
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 import tf
 from dynamic_reconfigure.server import Server
 from ens_vision.cfg import ArucoConfig
@@ -31,6 +31,8 @@ import pyrealsense2 as rs
 import os
 from cv_bridge import CvBridge
 
+ir1_image = []
+
 def file_constante(liste,element,longueur):
     liste.append(element)
     if len(liste)>longueur:
@@ -47,8 +49,21 @@ def callback(config, level):
 def img_callback(data):
     global ir1_image
     bridge = CvBridge()
-    ir1_image = bridge.imgmsg_to_cv2(data, encoding="passthrough")
-    print(type(ir1_image))
+    ir1_image = bridge.imgmsg_to_cv2(data)
+    
+def param_callback(data):
+    global dist
+    global mtx
+    
+    dist = np.array(data.D)
+    
+    
+    P = np.array(data.P)
+    mtx = np.array([P[0:3],P[4:7],P[8:11]])
+
+    #mtx = np.array([[intr.fx, 0, intr.ppx],[0, intr.fy, intr.ppx],[0, 0, 1]])   
+
+    
 
 def aruco():
   
@@ -56,9 +71,10 @@ def aruco():
     global bruit_realsense
     br = tf.TransformBroadcaster()
     rospy.init_node('aruco_frame_publisher')
-    pubIR = rospy.Subscriber('/camera/infra1/image_rect_raw', Image, img_callback)
+    rospy.Subscriber('/camera/infra1/image_rect_raw', Image, img_callback)
+    rospy.Subscriber('/camera/infra1/camera_info', CameraInfo, param_callback)
     srv = Server(ArucoConfig, callback)
-    pubAruco = rospy.Publisher('aruco/IRLeft', Image, queue_size=10)
+    pubAruco = rospy.Publisher('aruco', Image, queue_size=10)
     rate = rospy.Rate(30) # 30hz
     
     
@@ -66,7 +82,7 @@ def aruco():
     #msg.pose = Pose(Point(x, y, 0.),Quaternion(*tf.transformations.quaternion_from_euler(roll, pitch, yaw)))
     
     while not rospy.is_shutdown():
-        try :
+        if ir1_image != [] :
             arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco/adaptiveThreshWinSizeMin')
             arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco/adaptiveThreshWinSizeMax')
             arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco/adaptiveThreshWinSizeStep')
@@ -93,13 +109,7 @@ def aruco():
            
             #dist = np.array( [0.0, 0.0, 0.0, -0.0, 0.0] )
             
-            # Get intrinsics params of the camera
-            profile = cfg.get_stream(rs.stream.infrared) 
-            intr = profile.as_video_stream_profile().get_intrinsics()
-            
-            mtx = np.array([[intr.fx, 0, intr.ppx],[0, intr.fy, intr.ppx],[0, 0, 1]])   
-
-            dist = np.array( intr.coeffs )
+           
             
             if debug:
             
@@ -149,7 +159,7 @@ def aruco():
                      
                      
                      if markerID==0:
-                         size=0.08
+                         size=0.12
                      else:
                          size=0.08
                      
@@ -213,32 +223,27 @@ def aruco():
                          cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
                         
                                         
-        except Exception as e: 
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-            print(e)
-            break
+        
     	
     	
-        bridge = CvBridge()
-        image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
-        pubAruco.publish(image_message)
-        if draw_cv2:
-        	# show the output frame
-            cv2.imshow("IR Left", gray)
+            bridge = CvBridge()
+            image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
+            pubAruco.publish(image_message)
+            if draw_cv2:
+            	# show the output frame
+                cv2.imshow("IR Left", gray)
+                
             
+            key = cv2.waitKey(1) & 0xFF
         
-        key = cv2.waitKey(1) & 0xFF
-    
-    	# if the `q` key was pressed, break from the loop
-        if key == ord("q"):
-            break
+        	# if the `q` key was pressed, break from the loop
+            if key == ord("q"):
+                break
+                
             
-        
-        rate.sleep() 
+            rate.sleep() 
             
-            
+          
             
 
 if __name__ == '__main__':
@@ -253,7 +258,7 @@ if __name__ == '__main__':
         bruit_realsense = []
         
         draw=True
-        draw_cv2=True
+        draw_cv2=False
         debug=True
         print('start')
         # print("press 'q' to close")

@@ -119,9 +119,12 @@ def aruco():
             profile = cfg.get_stream(rs.stream.infrared) 
             intr = profile.as_video_stream_profile().get_intrinsics()
             
+            
             mtx = np.array([[intr.fx, 0, intr.ppx],[0, intr.fy, intr.ppx],[0, 0, 1]])   
 
             dist = np.array( intr.coeffs )
+            
+            print(mtx, dist)
             
             if debug:
             
