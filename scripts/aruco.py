@@ -159,9 +159,9 @@ def aruco():
                      
                      
                      if markerID==0:
-                         size=0.12
+                         size=0.10
                      else:
-                         size=0.08
+                         size=0.10
                      
                      # POSE ESTIMATION
                      rvec, tvec ,_ = cv2.aruco.estimatePoseSingleMarkers(np.array(markerCorner), size, mtx, dist)
@@ -250,7 +250,8 @@ if __name__ == '__main__':
     try:
     
         # Configure aruco detection
-        arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+        # arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+        arucoDict = cv2.aruco.Dictionary_create(3, 3)
         arucoParams = cv2.aruco.DetectorParameters_create()
         
 	

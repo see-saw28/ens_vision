@@ -288,7 +288,8 @@ if __name__ == '__main__':
     try:
     
         # Configure aruco detection
-        arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+        # arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+        arucoDict = cv2.aruco.Dictionary_create(8, 3)
         arucoParams = cv2.aruco.DetectorParameters_create()
         
 	# Configure depth and color streams

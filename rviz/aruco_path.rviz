@@ -132,13 +132,13 @@ Visualization Manager:
       Value: false
     - Alpha: 1
       Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 0.20000000298023224
       Name: Axes
       Radius: 0.019999999552965164
       Reference Frame: marker_1
       Show Trail: false
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /path_marker
@@ -219,9 +219,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.130202978849411
+      Pitch: 0.33520281314849854
       Target Frame: <Fixed Frame>
-      Yaw: 1.0236138105392456
+      Yaw: 1.3936134576797485
     Saved: ~
 Window Geometry:
   Displays:
