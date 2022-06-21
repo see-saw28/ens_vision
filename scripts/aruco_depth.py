@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 13 16:49:32 2022
+Created on Tue Jun 21 10:24:07 2022
 
 @author: student
 """
@@ -20,7 +20,7 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
 from std_msgs.msg import Header
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 import tf
 from dynamic_reconfigure.server import Server
 from ens_vision.cfg import ArucoConfig
@@ -38,6 +38,9 @@ import pyrealsense2 as rs
 import os
 from cv_bridge import CvBridge
 
+ir1_image = []
+depth_image = []
+
 def file_constante(liste,element,longueur):
     liste.append(element)
     if len(liste)>longueur:
@@ -46,33 +49,47 @@ def file_constante(liste,element,longueur):
     
         
 def callback(config, level):
-    global arucoParams
-    
-    arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco/adaptiveThreshWinSizeMin')
-    arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco/adaptiveThreshWinSizeMax')
-    arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco/adaptiveThreshWinSizeStep')
-    arucoParams.adaptiveThreshConstant=rospy.get_param('aruco/adaptiveThreshConstant')
-    arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco/minMarkerPerimeterRate')
-    arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco/polygonalApproxAccuracyRate')
-    arucoParams.cornerRefinementMethod=rospy.get_param('aruco/cornerRefinementMethod')
-    arucoParams.perspectiveRemovePixelPerCell=rospy.get_param('aruco/perspectiveRemovePixelPerCell')
-    arucoParams.maxErroneousBitsInBorderRate=rospy.get_param('aruco/maxErroneousBitsInBorderRate')
-    arucoParams.errorCorrectionRate=rospy.get_param('aruco/errorCorrectionRate')
             
-    rospy.loginfo("""Reconfigure Request: {adaptiveThreshConstant}, {minMarkerPerimeterRate},{polygonalApproxAccuracyRate}, {perspectiveRemovePixelPerCell}, {maxErroneousBitsInBorderRate}""".format(**config))
+            rospy.loginfo("""Reconfigure Request: {adaptiveThreshConstant}, {minMarkerPerimeterRate},{polygonalApproxAccuracyRate}, {perspectiveRemovePixelPerCell}, {maxErroneousBitsInBorderRate}""".format(**config))
+            
+            return config
+
+def img_callback(data):
+    global ir1_image
+    bridge = CvBridge()
+    ir1_image = bridge.imgmsg_to_cv2(data)
     
-    return config
+def depth_callback(data):
+    global depth_image
+    bridge = CvBridge()
+    depth_image = bridge.imgmsg_to_cv2(data)
+    
+def param_callback(data):
+    global dist
+    global mtx
+    
+    dist = np.array(data.D)
+    
+    
+    P = np.array(data.P)
+    mtx = np.array([P[0:3],P[4:7],P[8:11]])
+
+    #mtx = np.array([[intr.fx, 0, intr.ppx],[0, intr.fy, intr.ppx],[0, 0, 1]])   
+
+    
 
 def aruco():
   
     global bruit_aruco
     global bruit_realsense
-    global depth_sensor
     br = tf.TransformBroadcaster()
     rospy.init_node('aruco_frame_publisher')
-    pubIR = rospy.Publisher('camera/IRLeft', Image, queue_size=10)
+    rospy.Subscriber('/camera/infra1/image_rect_raw', Image, img_callback)
+    rospy.Subscriber('/camera/depth/image_rect_raw', Image, depth_callback)
+    
+    rospy.Subscriber('/camera/infra1/camera_info', CameraInfo, param_callback)
     srv = Server(ArucoConfig, callback)
-    pubAruco = rospy.Publisher('aruco/IRLeft', Image, queue_size=10)
+    pubAruco = rospy.Publisher('aruco', Image, queue_size=10)
     rate = rospy.Rate(30) # 30hz
     
     
@@ -80,29 +97,20 @@ def aruco():
     #msg.pose = Pose(Point(x, y, 0.),Quaternion(*tf.transformations.quaternion_from_euler(roll, pitch, yaw)))
     
     while not rospy.is_shutdown():
-        try :
+        if ir1_image != [] :
+            arucoParams.adaptiveThreshWinSizeMin=rospy.get_param('aruco/adaptiveThreshWinSizeMin')
+            arucoParams.adaptiveThreshWinSizeMax=rospy.get_param('aruco/adaptiveThreshWinSizeMax')
+            arucoParams.adaptiveThreshWinSizeStep=rospy.get_param('aruco/adaptiveThreshWinSizeStep')
+            arucoParams.adaptiveThreshConstant=rospy.get_param('aruco/adaptiveThreshConstant')
+            arucoParams.minMarkerPerimeterRate=rospy.get_param('aruco/minMarkerPerimeterRate')
+            arucoParams.polygonalApproxAccuracyRate=rospy.get_param('aruco/polygonalApproxAccuracyRate')
+            arucoParams.cornerRefinementMethod=rospy.get_param('aruco/cornerRefinementMethod')
+            arucoParams.perspectiveRemovePixelPerCell=rospy.get_param('aruco/perspectiveRemovePixelPerCell')
+            arucoParams.maxErroneousBitsInBorderRate=rospy.get_param('aruco/maxErroneousBitsInBorderRate')
+            arucoParams.errorCorrectionRate=rospy.get_param('aruco/errorCorrectionRate')
             
             
-            exposure = rospy.get_param('aruco/exposure')
-            # print(exposure)
-            
-            depth_sensor.set_option(rs.option.exposure, exposure)
-            
-        	# grab the frame from the threaded video stream and resize it
-        	# Wait for a IR frame
-            frames = pipeline.wait_for_frames()
-            ir1_frame = frames.get_infrared_frame(1)
-           
-            
-            if not ir1_frame :
-                continue
-            
-            # Convert images to numpy arrays
-            ir1_image = np.asanyarray(ir1_frame.get_data())
-            
-            bridge = CvBridge()
-            image_message = bridge.cv2_to_imgmsg(ir1_image, encoding="passthrough")
-            pubIR.publish(image_message)
+       
             
             # Convert to RGB image for axis drawing
             gray = cv2.cvtColor(ir1_image, cv2.COLOR_GRAY2RGB)
@@ -116,16 +124,7 @@ def aruco():
            
             #dist = np.array( [0.0, 0.0, 0.0, -0.0, 0.0] )
             
-            # Get intrinsics params of the camera
-            profile = cfg.get_stream(rs.stream.infrared) 
-            intr = profile.as_video_stream_profile().get_intrinsics()
-            
-            
-            mtx = np.array([[intr.fx, 0, intr.ppx],[0, intr.fy, intr.ppy],[0, 0, 1]])   
-
-            dist = np.array( intr.coeffs )
-            
-            # print(mtx, dist)
+           
             
             if debug:
             
@@ -173,49 +172,40 @@ def aruco():
                      cX = int((topLeft[0] + bottomRight[0]) / 2.0)
                      cY = int((topLeft[1] + bottomRight[1]) / 2.0)
                      
-                                         
                      
-                     if markerID==0 or markerID==1:
-                         size=0.10
+                     if markerID<2:
+                         size=0.8
                      else:
                          size=0.10
                      
                      # POSE ESTIMATION
                      rvec, tvec ,_ = cv2.aruco.estimatePoseSingleMarkers(np.array(markerCorner), size, mtx, dist)
                                         
-                     x,y,z=tvec[0][0]
+                     # x,y,z=tvec[0][0]
                      a,b,c=rvec[0][0]
+                     # print(tvec)
                      
-                     if depth :
-                         depth_frame = frames.get_depth_frame()
-                         depth_image = np.asanyarray(depth_frame.get_data())
+                     
+                      
+                           
+                     bruit_realsense[markerID] = file_constante(bruit_realsense[markerID], depth_image[cY,cX]/1000, 10)
+                       
+                     if markerID == 0 :
                          
-                         
-                         bruit_aruco[markerID] = file_constante(bruit_aruco[markerID], tvec[0,0,2], 5)
-                            
-                         # print('bruit aruco :', np.std(bruit_aruco))
-                            
-                         bruit_realsense[markerID] = file_constante(bruit_realsense[markerID], depth_image[cY,cX]/1000, 5)
-                            
-                         # print('bruit realsense :', np.std(bruit_realsense))
-                         
-                         # print(f'marker {markerID} ',f'{tvec[0,0,2]:.3f}+/-{np.std(bruit_aruco[markerID]):.5f}'+"m", f'{depth_image[cY,cX]/1000}+/-{np.std(bruit_realsense[markerID]):.5f}m')
-                         
-                         (topLeft1, topRight1, bottomRight1, bottomLeft1) = corner
-                         cX1 = (topLeft1[0] + bottomRight1[0]) / 2.0
-                         cY1 = (topLeft1[1] + bottomRight1[1]) / 2.0
-                         
-                         z = depth_image[int(cY1),int(cX1)]/1000
-                         
-                         #pinhole model
-                         x = (cX1 - intr.ppx) * z / intr.fx
-                         y = (cY1 - intr.ppy) * z / intr.fy
-                         
+                         print('bruit realsense :', np.std(bruit_realsense[0]))
                     
-                     else :
-                         bruit_aruco[markerID] = file_constante(bruit_aruco[markerID], tvec[0,0,2], 5)
-                         print(f'marker {markerID} ',f'{tvec[0,0,2]:.3f}+/-{np.std(bruit_aruco[markerID]):.5f}'+"m")
-                     
+                    # print(f'marker {markerID} ',f'{tvec[0,0,2]:.3f}+/-{np.std(bruit_aruco[markerID]):.5f}'+"m", f'{depth_image[cY,cX]/1000}+/-{np.std(bruit_realsense[markerID]):.5f}m')
+                    
+                     (topLeft1, topRight1, bottomRight1, bottomLeft1) = corner
+                     cX1 = (topLeft1[0] + bottomRight1[0]) / 2.0
+                     cY1 = (topLeft1[1] + bottomRight1[1]) / 2.0
+                    
+                     z = depth_image[int(cY1),int(cX1)]/1000
+                    
+                     #pinhole model
+                     x = (cX1 - mtx[0,2]) * z / mtx[0,0]
+                     y = (cY1 - mtx[1,2]) * z / mtx[1,1]
+                
                      
                           
                      
@@ -261,6 +251,7 @@ def aruco():
                         
                          cv2.putText(gray, f'{tvec[0,0,2]:.3f}'+"m",(topLeft[0], topLeft[1] + 35),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
                          
+                         # print(f'{tvec[0,0,2]:.3f}'+"m")
                              
                          
                          
@@ -269,32 +260,27 @@ def aruco():
                          cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
                         
                                         
-        except Exception as e: 
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-            print(e)
-            break
+        
     	
     	
-        bridge = CvBridge()
-        image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
-        pubAruco.publish(image_message)
-        if draw_cv2:
-        	# show the output frame
-            cv2.imshow("IR Left", gray)
+            bridge = CvBridge()
+            image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
+            pubAruco.publish(image_message)
+            if draw_cv2:
+            	# show the output frame
+                cv2.imshow("IR Left", gray)
+                
             
+            key = cv2.waitKey(1) & 0xFF
         
-        key = cv2.waitKey(1) & 0xFF
-    
-    	# if the `q` key was pressed, break from the loop
-        if key == ord("q"):
-            break
+        	# if the `q` key was pressed, break from the loop
+            if key == ord("q"):
+                break
+                
             
-        
-        rate.sleep() 
+            rate.sleep() 
             
-            
+          
             
 
 if __name__ == '__main__':
@@ -305,55 +291,17 @@ if __name__ == '__main__':
         arucoDict = cv2.aruco.Dictionary_create(6, 3)
         arucoParams = cv2.aruco.DetectorParameters_create()
         
-	# Configure depth and color streams
-        pipeline = rs.pipeline()
-        config = rs.config()
-        rs.option.laser_power=0
-
-	# Get device product line for setting a supporting resolution
-        pipeline_wrapper = rs.pipeline_wrapper(pipeline)
-        pipeline_profile = config.resolve(pipeline_wrapper)
-        device = pipeline_profile.get_device()
-        device_product_line = str(device.get_info(rs.camera_info.product_line))
-
-        found_rgb = False
-
-        for s in device.sensors:
-            if s.get_info(rs.camera_info.name) == 'RGB Camera':
-                found_rgb = True
-                break
-        if not found_rgb:
-            print("The demo requires Depth camera with Color sensor")
-            exit(0)
-
-        #%% enable streams
-        config.enable_stream(rs.stream.infrared, 1, 1280,720, rs.format.y8, 30) #left IR aligned with depth map
-        #config.enable_stream(rs.stream.infrared, 2, 1280,800, rs.format.y8, 6)
-        depth = True
-        if depth :
-            config.enable_stream(rs.stream.depth, 1280,720, rs.format.z16, 30)
-
-	# Start streaming
-        cfg = pipeline.start(config)
-        
-        # unenable the laser
-        depth_sensor = cfg.get_device().first_depth_sensor()
-        depth_sensor.set_option(rs.option.emitter_enabled, 1)
-        # laser_range = depth_sensor.get_option_range(rs.option.laser_power)
-        # print(laser_pwr)
-        depth_sensor.set_option(rs.option.visual_preset, 3)
-        
+	
         bruit_aruco = [[],[],[],[],[],[],[]]
         bruit_realsense = [[],[],[],[],[],[],[]]
         
         draw=True
         draw_cv2=False
-        debug=False
+        debug=True
         print('start')
         # print("press 'q' to close")
         aruco()
     except rospy.ROSInterruptException:
         # do a bit of cleanup
         cv2.destroyAllWindows()
-        pipeline.stop()
         pass

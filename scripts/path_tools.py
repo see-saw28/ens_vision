@@ -15,7 +15,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
 import tf
-
+from tf.transformations import quaternion_from_matrix, quaternion_from_euler,euler_from_quaternion
 
 from numpy_ros import to_numpy, to_message
 
@@ -28,98 +28,146 @@ import sys
 
 import os
 import pickle
-
-def header_to_numpy(header):
-    return np.array([header.seq, [header.stamp.secs, header.stamp.nsecs], header.frame_id], dtype=object)
-
-def numpy_to_header(array):
-    header=Header()
-    header.seq=array[0]
-    header.stamp.secs=array[1][0]
-    header.stamp.nsecs=array[1][1]
-    header.frame_id=array[2]
-    return header
-    
-def path_to_numpy(msg):
-    np_header=header_to_numpy(msg.header)
-    np_path=np.empty(len(msg.poses)+1, dtype=object)
-    print(np_header)
-    np_path[0]=np_header
-    i=0
-    for pose in msg.poses:
-        i+=1
-        #print(pose)
-        np_pose = to_numpy(pose)
-        #print('np_pose',type(np_pose[1]))
-        #to_message(Pose, np_pose)
-        np_header = header_to_numpy(pose.header)
-        np_path[i] = [np_header, np_pose]
-    return np_path 
-    
-    
-def numpy_to_path(np_path):
-    msg=Path()
-    msg.header=np_path[0]
-    poses=[]
-    for i in range (1,len(np_path)):
-        pose=PoseStamped()
-        pose.header=numpy_to_header(np_path[i][0])
-        pose.pose=to_message(Pose,np_path[i][1])
-        break
-        poses.append[pose]
-    return msg
+import rospkg
+rospack = rospkg.RosPack()
 
 
-    
+def check_file(filePath):
+    if os.path.exists(filePath):
+        numb = 1
+        while True:
+            newPath = "{0}_{2}{1}".format(*os.path.splitext(filePath) + (numb,))
+            if os.path.exists(newPath):
+                numb += 1
+            else:
+                return newPath
+    return filePath 
 
-def distance(msg):
-    i=0
-    distance=0
-    for pose in msg.poses:
-        if (i==0):
-            old_x=pose.pose.position.x
-            old_y=pose.pose.position.y
-            old_z=pose.pose.position.z
-            
-        else:
-            x=pose.pose.position.x
-            y=pose.pose.position.y
-            z=pose.pose.position.z
-            
-            dist=np.sqrt((x-old_x)**2+(y-old_y)**2+(z-old_z)**2)
-            distance+=dist
-            
-            old_x=x
-            old_y=y
-            old_z=z
-        i+=1
-        
-    return distance
-        #print(pose)
+def save_mcp(traj):
+     
+    filename=check_file(rospack.get_path('ens_vision')+'/paths/mcp.npy')
     
-    #msg.pose = Pose(Point(x, y, 0.),Quaternion(*tf.transformations.quaternion_from_euler(roll, pitch, yaw)))
-    
-    
-            
-            
-            
-
-if __name__ == '__main__':
-    
-    
-    f = open('path_2.pckl', 'rb')
-    msg = pickle.load(f)
+    f = open(filename, 'wb')
+    np.save(f, traj)
     f.close()
     
-    distance = distance(msg)
-    print(distance)
+    print('saved mcp path :', filename)
     
-    '''rospy.init_node('path_saver')
-    rate = rospy.Rate(0.05)
-    try:
-        rospy.Subscriber("/trajectory", Path, callback)
-        rospy.spin()
+    
+def save_path(path, name='path'):
+     
+    filename=check_file(rospack.get_path('ens_vision')+f'/paths/{name}.pckl')
+    
+    f = open(filename, 'wb')
+    pickle.dump(path, f)
+    f.close()
+    
+    print('saved ROS path :', filename)
+    
+def save_custom_path(marker,speeds,orientations,cmd_speeds):
+     
+    filename=check_file(rospack.get_path('ens_vision')+'/paths/custom_path.pckl')
+    
+    f = open(filename, 'wb')
+    pickle.dump([marker,speeds,orientations,cmd_speeds], f)
+    f.close()
+    
+    print('saved custom path :', filename)
+    
+    
+def load_mcp(name):
+     
+    
+   
+    f = open(rospack.get_path('ens_vision')+f'/paths/{name}.npy', 'wb')
+    mcp = np.load(f)
+    f.close()
+    
+    print('load mcp path with :', len(mcp), ' poses')
+    
+    return mcp
+    
+   
+    
+    
+def load_path(name):
+    
+    
+     
+    f = open(rospack.get_path('ens_vision')+f'/paths/{name}.pckl', 'wb')
+    path = pickle.load(f)
+    f.close()
+    
+    print('load ROS path with :', len(path.poses), ' poses')
+    
+    return path
+    
+    
+    
+def load_custom_path(name):
+     
+    if 'custom_path' in  name :
+     
+        f = open(rospack.get_path('ens_vision')+f'/paths/{name}.pckl', 'wb')
+        marker,speeds,orientations,cmd_speeds = pickle.load(f)
+        f.close()
         
-    except rospy.ROSInterruptException:
-       
-        pass'''
+        print('load custom path with :', len(speeds), ' poses')
+        
+        return marker,speeds,orientations,cmd_speeds
+    
+    else :
+        print('wrong name')
+        return None
+    
+def mcp_to_path(mcp):
+    path = Path()
+    path.header.frame_id = 'map'
+    
+    for i, position in enumerate(mcp):
+        pose = PoseStamped()
+        
+        pose.header.frame_id = "map"
+        pose.header.seq = i
+        
+        pose.pose.position.x = position[0]
+        pose.pose.position.y = position[1]
+        
+        quat = quaternion_from_euler(0,0,position[2])
+        
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+        
+        path.poses.append(pose)
+        
+    return path
+
+
+def xy_to_path(X,Y):
+    path = Path()
+    path.header.frame_id = 'map'
+    
+    for i in range(len(X)):
+        pose = PoseStamped()
+        
+        pose.header.frame_id = "map"
+        pose.header.seq = i
+        
+        pose.pose.position.x = X[i]
+        pose.pose.position.y = Y[i]
+        
+        yaw = np.arctan2(Y[(i+1)%len(Y)]-Y[i], X[(i+1)%len(Y)]-X[i])
+        
+        quat = quaternion_from_euler(0,0,yaw)
+        
+        pose.pose.orientation.x = quat[0]
+        pose.pose.orientation.y = quat[1]
+        pose.pose.orientation.z = quat[2]
+        pose.pose.orientation.w = quat[3]
+        
+        path.poses.append(pose)
+        
+    return path
+    

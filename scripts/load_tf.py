@@ -29,12 +29,12 @@ import pickle
 
 def path():
     
-    rospy.init_node('ros_path', anonymous=False)
+    rospy.init_node('load_tf', anonymous=False)
     rate = rospy.Rate(100)
 
     br = tf.TransformBroadcaster()
     
-    map_name = 'svd_1'
+    map_name = 'test_map_7'
     
     import rospkg
     rospack = rospkg.RosPack()
@@ -49,19 +49,19 @@ def path():
     while not rospy.is_shutdown():
 
         
-        br.sendTransform(pos,quat,rospy.Time.now(),map_frame_id,marker_frame_id)
-        
+        br.sendTransform(pos,quat,rospy.Time.now(),map_frame_id, marker_frame_id)
+        # print(map_frame_id)
         
         rate.sleep()
 
 if __name__ == '__main__':
     try:
-        # marker_frame_id="camera"
-        # map_frame_id="map"
+        marker_frame_id="camera"
+        map_frame_id="map"
         
-        # if (len(sys.argv)>2):
-        #     marker_frame_id=sys.argv[1]
-        #     map_frame_id=sys.argv[2]
+        if (len(sys.argv)>2):
+            marker_frame_id=sys.argv[1]
+            map_frame_id=sys.argv[2]
         path()
     except rospy.ROSInterruptException:
         pass

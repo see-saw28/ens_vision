@@ -30,6 +30,8 @@ import sys
 import pyrealsense2 as rs
 import os
 import pickle
+import rospkg
+rospack = rospkg.RosPack()
 
 def path(filename='path'):
     pub = rospy.Publisher('trajectory', Path, queue_size=10)
@@ -42,18 +44,20 @@ def path(filename='path'):
 
     while not rospy.is_shutdown():
 
-        f = open(f'paths/{filename}.pckl', 'rb')
+        f = open(rospack.get_path('ens_vision')+f'/paths/{filename}.pckl', 'rb')
         obj = pickle.load(f)
         f.close()
 
         pub.publish(obj)
-        # print(len(obj.points))
+        print(len(obj.poses))
         rate.sleep()
 
 if __name__ == '__main__':
     try:
         if (len(sys.argv)>1):
             filename=sys.argv[1]
+        else :
+            filename='centerline'
            
         path(filename)
     except rospy.ROSInterruptException:
