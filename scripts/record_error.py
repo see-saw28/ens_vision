@@ -28,11 +28,12 @@ import numpy as np
 import rospy
 import tf
 from geometry_msgs.msg import PointStamped, PoseStamped
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, String
 from tf.transformations import quaternion_from_matrix, quaternion_from_euler,euler_from_quaternion
 import pickle
 from sensor_msgs.msg import Image, CameraInfo
 from nav_msgs.msg import Path
+import path_tools
 
 
 frame_0='marker_0'
@@ -43,6 +44,8 @@ map_frame_id='map'
 map_name = 'test_map'
 
 number_of_points = 6
+
+lap_count = 0
 
 def normalize_angle(angle):
     # adapted from: https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathTracking/stanley_controller
@@ -105,10 +108,13 @@ def callback(msg):
     
     yaw = np.arctan2(y1 - y0, x1 - x0)
     
-    error_front_axle, error_yaw = calc_error(x0, y0, yaw ,course_x, course_y, course_yaw)
+    error_crosstrack_ext, error_yaw_ext = calc_error(x0, y0, yaw ,course_x, course_y, course_yaw)
     
-    pub_error_pos.publish(Float32(error_front_axle))
-    pub_error_yaw.publish(Float32(error_yaw))
+    errors_crosstrack_ext.append(error_crosstrack_ext)
+    errors_yaw_ext.append(error_yaw_ext)
+    
+    pub_error_pos.publish(Float32(error_crosstrack_ext))
+    pub_error_yaw.publish(Float32(error_yaw_ext))
     
     quat = quaternion_from_euler(0,0,yaw)
    
@@ -136,16 +142,25 @@ def callback(msg):
     pub.publish(msg_path)
     i+=1
     
-    
-
+def sys_callback(msg):
+    global lap_count
+    msg=msg.data.split(" ")
+    if (msg[0]=="lap"):    
+        lap_count += 1
+        
+    elif msg[0]=='load':
+        path = path_tools.load_path(msg[1])
+        
 if __name__ == '__main__':    
     
     rospy.init_node('record_path')
     tl = tf.TransformListener()
-    pub = rospy.Publisher('current_path', Path, queue_size=10)
+    pub = rospy.Publisher('testing_path', Path, queue_size=10)
     pub_error_pos = rospy.Publisher('crosstrack_error', Float32, queue_size=10)
     pub_error_yaw = rospy.Publisher('yaw_error', Float32, queue_size=10)
-    rospy.Subscriber('ref_path', Path, path_callback)
+    pub_ref = rospy.Publisher('ref_path', Path, queue_size=10)
+    rospy.Subscriber('trajectory_loaded', Path, path_callback)
+    rospy.Subscriber("syscommand", String, sys_callback)
     msg_path = Path()
     msg_path.header.frame_id = 'map'
     i = 0
@@ -156,6 +171,9 @@ if __name__ == '__main__':
     
     try :
        rospy.Subscriber("aruco", Image, callback)
+       
+       errors_crosstrack_ext = []
+       errors_yaw_ext = []
        
        rospy.spin()
             

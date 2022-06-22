@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Wed Jun 22 14:59:20 2022
+
+@author: student
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Jun 21 10:24:07 2022
 
 @author: student
@@ -126,27 +133,7 @@ def aruco():
             
            
             
-            if debug:
             
-                for rej in rejected:
-                     
-                     # extract the marker corners (which are always returned
-                    # in top-left, top-right, bottom-right, and bottom-left
-           # order)
-                     corner = rej.reshape((4, 2))
-                     
-                     (topLeft, topRight, bottomRight, bottomLeft) = corner
-         
-                     # convert each of the (x, y)-coordinate pairs to integers
-                     topRight = (int(topRight[0]), int(topRight[1]))
-                     bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-                     bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-                     topLeft = (int(topLeft[0]), int(topLeft[1]))
-                     
-                     cv2.line(gray, topLeft, topRight, (0, 255, 255), 2)
-                     cv2.line(gray, topRight, bottomRight, (0, 255, 255), 2)
-                     cv2.line(gray, bottomRight, bottomLeft, (0, 255, 255), 2)
-                     cv2.line(gray, bottomLeft, topLeft, (0, 255, 255), 2)
         
         	# verify *at least* one ArUco marker was detected
             if len(corners) > 0:
@@ -176,23 +163,14 @@ def aruco():
                      if markerID<2:
                          size=0.8
                      else:
-                         size=0.10
+                         pass
                      
-                     # POSE ESTIMATION
-                     rvec, tvec ,_ = cv2.aruco.estimatePoseSingleMarkers(np.array(markerCorner), size, mtx, dist)
-                                        
-                     # x,y,z=tvec[0][0]
-                     a,b,c=rvec[0][0]
-                     # print(tvec)
+                     
                      
                      
                       
                            
-                     bruit_realsense[markerID] = file_constante(bruit_realsense[markerID], depth_image[cY,cX]/1000, 10)
-                       
-                     if markerID == 0 :
-                         
-                         print('bruit realsense :', np.std(bruit_realsense[0]))
+                     
                     
                     # print(f'marker {markerID} ',f'{tvec[0,0,2]:.3f}+/-{np.std(bruit_aruco[markerID]):.5f}'+"m", f'{depth_image[cY,cX]/1000}+/-{np.std(bruit_realsense[markerID]):.5f}m')
                     
@@ -209,74 +187,21 @@ def aruco():
                      
                           
                      
-                     #rvec angle rodrigues but ROS needs quaternion
-                     # we need a homogeneous matrix but OpenCV only gives us a 3x3 rotation matrix
-                     rotation_matrix = np.array([[0, 0, 0, 0],
-                                                [0, 0, 0, 0],
-                                                [0, 0, 0, 0],
-                                                [0, 0, 0, 1]],
-                                                dtype=float)
-                     rotation_matrix[:3, :3], _ = cv2.Rodrigues(rvec[0])
-                    
-                    # convert the matrix to a quaternion
-                     quaternion = tf.transformations.quaternion_from_matrix(rotation_matrix)
+                     
                     
                      br.sendTransform((x,y,z),
-                                     quaternion,
+                                     (0,0,0,1),
                                      rospy.Time.now(),f"marker_{ids[i]}","camera")
                          
          
             
-                     if draw:
-             			# draw the bounding box of the ArUCo detection
-                         cv2.line(gray, topLeft, topRight, (0, 255, 0), 2)
-                         cv2.line(gray, topRight, bottomRight, (0, 255, 0), 2)
-                         cv2.line(gray, bottomRight, bottomLeft, (0, 255, 0), 2)
-                         cv2.line(gray, bottomLeft, topLeft, (0, 255, 0), 2)
-                         
-                         
-                         
-                         
-             
-             			# compute and draw the center (x, y)-coordinates of the
-             			# ArUco marker
-                         
-                         cv2.circle(gray, (cX, cY), 4, (0, 0, 255), -1)
-             
-             			# draw the ArUco marker ID on the frame
-                         cv2.putText(gray, str(markerID),(topLeft[0], topLeft[1] - 15),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
-                         # draw the ArUco marker ID on the frame
-                         
-
-                        
-                         cv2.putText(gray, f'{tvec[0,0,2]:.3f}'+"m",(topLeft[0], topLeft[1] + 35),cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 0), 2)
-                         
-                         # print(f'{tvec[0,0,2]:.3f}'+"m")
-                             
-                         
-                         
-                   
-                         # draw axis for the aruco markers
-                         cv2.aruco.drawAxis(gray, mtx, dist, rvec[0], tvec[0], 0.1)
+                     
                         
                                         
         
     	
     	
-            bridge = CvBridge()
-            image_message = bridge.cv2_to_imgmsg(gray, encoding="passthrough")
-            pubAruco.publish(image_message)
-            if draw_cv2:
-            	# show the output frame
-                cv2.imshow("IR Left", gray)
-                
             
-            key = cv2.waitKey(1) & 0xFF
-        
-        	# if the `q` key was pressed, break from the loop
-            if key == ord("q"):
-                break
-                
             
             rate.sleep() 
             
@@ -295,7 +220,7 @@ if __name__ == '__main__':
         bruit_aruco = [[],[],[],[],[],[],[]]
         bruit_realsense = [[],[],[],[],[],[],[]]
         
-        draw=True
+        draw=False
         draw_cv2=False
         debug=False
         print('start')

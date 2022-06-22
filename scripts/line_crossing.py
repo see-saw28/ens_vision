@@ -36,7 +36,7 @@ def cros(A,B):
 
 def navigation():
     static_frame_id="map"
-    moving_frame_id="base_link"
+    moving_frame_id="marker_0"
     
     # static_frame_id="camera_odom_frame"
     # moving_frame_id="camera_pose_frame"
@@ -55,12 +55,12 @@ def navigation():
     rate = rospy.Rate(pub_freq)
     tl = tf.TransformListener()
     
-    xa=0
-    ya=-2.45
+    xa=-1.1
+    ya=1.74
     A=complex(xa,ya)
     
-    xb=0
-    yb=-1.25
+    xb=-0.71
+    yb=2.64
     
     B=complex(xb,yb)
     AB=A-B

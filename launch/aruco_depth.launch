@@ -6,7 +6,7 @@
 <arg name="enable_depth" value="true" />
 </include>
 
-<node name="aruco" pkg="ens_vision" type="aruco_depth.py" output="screen" >
+<node name="aruco" pkg="ens_vision" type="aruco_depth_light.py" output="screen" >
  	<param name="adaptiveThreshWinSizeMin" value="3"/>
     	<param name="adaptiveThreshWinSizeMax" value="23" />
     	<param name="adaptiveThreshWinSizeStep" value="5" />
