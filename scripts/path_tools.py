@@ -29,6 +29,7 @@ import sys
 import os
 import pickle
 import rospkg
+import yaml
 rospack = rospkg.RosPack()
 
 
@@ -53,16 +54,23 @@ def save_mcp(traj):
     
     print('saved mcp path :', filename)
     
+    return filename
     
-def save_path(path, name='path'):
-     
-    filename=check_file(rospack.get_path('ens_vision')+f'/paths/{name}.pckl')
+    
+def save_path(path, name='path', test=False):
+    
+    if test :
+        filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.pckl')
+    else :
+        filename=check_file(rospack.get_path('ens_vision')+f'/paths/{name}.pckl')
     
     f = open(filename, 'wb')
     pickle.dump(path, f)
     f.close()
     
     print('saved ROS path :', filename)
+    
+    return filename
     
 def save_custom_path(marker,speeds,orientations,cmd_speeds):
      
@@ -73,6 +81,8 @@ def save_custom_path(marker,speeds,orientations,cmd_speeds):
     f.close()
     
     print('saved custom path :', filename)
+    
+    return filename
     
     
 def load_mcp(name):
@@ -172,9 +182,13 @@ def xy_to_path(X,Y):
         
     return path
 
-def save_error(crosstrack,yaw, name='error'):
-     
-    filename=check_file(rospack.get_path('ens_vision')+f'/errors/{name}.npy')
+def save_error(crosstrack,yaw, name='error',test=False):
+    
+    if test :
+        filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.npy')
+        
+    else :
+        filename=check_file(rospack.get_path('ens_vision')+f'/errors/{name}.npy')
     
     f = open(filename, 'wb')
     error = np.array([crosstrack,yaw])
@@ -183,12 +197,16 @@ def save_error(crosstrack,yaw, name='error'):
     
     print('saved error :', filename, f' with {len(crosstrack)} points')
     
+    return filename
     
-def load_error(name, absolute=False):
+    
+def load_error(name, absolute=False, test=False):
      
     
-   
-    f = open(rospack.get_path('ens_vision')+f'/errors/{name}.npy', 'rb')
+    if test :
+        f = open(rospack.get_path('ens_vision')+f'/tests/{name}.npy', 'rb')
+    else :
+        f = open(rospack.get_path('ens_vision')+f'/errors/{name}.npy', 'rb')
     error = np.load(f)
     f.close()
     
@@ -200,4 +218,26 @@ def load_error(name, absolute=False):
     else :
         return error[0],error[1]
     
+def save_test(path, crosstrack, yaw, name='test', ref_path_name='', ref_path=None, map_name='test_map1_clean', total_laps = 0, total_time = 0):
     
+    filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.yaml')
+    name=filename.split('/')[-1].split('.')[0]
+    error_path = save_error(crosstrack, yaw, name+'_error',test=True)
+    traj_path = save_path(path, name+'_traj',test=True) 
+    if ref_path != None:
+        
+        ref_traj_path = save_path(ref_path, name+'_ref_traj', test=True)
+    else :
+        ref_traj_path = ''
+        
+    driving_mode = rospy.get_param('joy_to_cmd_vel/driving_mode')
+    speed = rospy.get_param('joy_to_cmd_vel/max_velocity')
+        
+    test_data = {'error_filename':error_path, 'path_filename':traj_path, 'ref_traj_name':ref_path_name, 'ref_path_filename':ref_traj_path, 'map_name':map_name, 'driving_mode':driving_mode, 'speed':speed, 'total_laps':total_laps,'total_time':total_time}
+   
+    filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.yaml')
+    
+    f = open(filename, 'w')
+    yaml.dump(test_data,f, default_flow_style=False)
+    
+    f.close()

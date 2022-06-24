@@ -1,0 +1,9 @@
+driving_mode: 2
+error_filename: /home/student/catkin_ws/src/ens_vision/tests/test_4_error.npy
+map_name: test_map1_clean
+path_filename: /home/student/catkin_ws/src/ens_vision/tests/test_4_traj.pckl
+ref_path_filename: ''
+ref_traj_name: mcp_4
+speed: 0.75
+total_laps: 5
+total_time: 53.078999280929565

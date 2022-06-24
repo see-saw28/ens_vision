@@ -114,7 +114,7 @@ Visualization Manager:
       Radius: 0.009999999776482582
       Shaft Diameter: 0.009999999776482582
       Shaft Length: 0.05000000074505806
-      Topic: /trajectory
+      Topic: /testing_lap_path
       Unreliable: false
       Value: true
     - Class: rviz/Marker
@@ -268,7 +268,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.4183735847473145
+      Distance: 6.602469444274902
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -276,17 +276,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.7758142948150635
-        Y: 1.9361646175384521
-        Z: 2.033970832824707
+        X: -0.9754992723464966
+        Y: 1.359054684638977
+        Z: 2.034123420715332
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5647963285446167
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
-      Yaw: 5.991783618927002
+      Yaw: 6.271785259246826
     Saved: ~
 Window Geometry:
   Displays:

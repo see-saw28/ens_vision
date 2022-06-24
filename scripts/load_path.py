@@ -44,7 +44,7 @@ def path(filename='path'):
 
     while not rospy.is_shutdown():
 
-        f = open(rospack.get_path('ens_vision')+f'/paths/{filename}.pckl', 'rb')
+        f = open(rospack.get_path('ens_vision')+f'/tests/{filename}.pckl', 'rb')
         obj = pickle.load(f)
         f.close()
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         if (len(sys.argv)>1):
             filename=sys.argv[1]
         else :
-            filename='centerline'
+            filename='test_6_traj'
            
         path(filename)
     except rospy.ROSInterruptException:

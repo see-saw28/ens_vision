@@ -64,6 +64,7 @@ def svd_transform(si,di):
     df=np.transpose(np.dot(R,np.transpose(si))+T)
     return (R,T,df)
 
+#calculer l'erreur sur le recalage
 
 # import matplotlib.pyplot as plt
 # import yaml

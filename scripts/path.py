@@ -48,7 +48,7 @@ class LapPath:
         self.static_frame = static_frame
         self.moving_frame = moving_frame
         
-        self.lap_publisher = rospy.Publisher(name, Path, queue_size=5)
+        self.init_lap_path()
 
         self.rate = rospy.Rate(90)
         self.tl = tf.TransformListener()
@@ -56,8 +56,7 @@ class LapPath:
         
         if len(path.poses)>0:
             self.path = path
-        else :
-            self.path = self.init_path()
+        
             
         self.time = rospy.Time.now().to_sec()
         
@@ -65,17 +64,18 @@ class LapPath:
     def init_path(self):
         path = Path()
         path.header.frame_id = self.static_frame
+        path.header.stamp = rospy.Time.now()
         
         return path
             
             
    
     
-    def init_lap_path(self,name='path'):
+    def init_lap_path(self):
         
         self.path = self.init_path()
-        self.name = name
-        self.lap_publisher = rospy.Publisher(name, Path, queue_size=5)
+       
+        self.lap_publisher = rospy.Publisher(self.name, Path, queue_size=5)
         
         return self
         
@@ -145,6 +145,7 @@ class TrajectoryPath:
         self.errors_crosstrack_ext = []
         self.errors_yaw_ext = []
         self.calculate_error = True
+        self.number_laps = 5
         
        
     def ds4_callback(self, msg):
@@ -159,9 +160,10 @@ class TrajectoryPath:
         if(msg[0]=="reset"):
             self.traj_path.init_lap_path()
             self.current_lap_path.init_lap_path()
+            self.testing_lap_path.init_lap_path()
             if(len(msg)>1 and msg[1]=="all"):
             
-                self.laps=[]
+                self.laps_path=[]
                 self.errors_crosstrack_ext = []
                 self.errors_yaw_ext = []
                 self.lap_count = 0
@@ -197,10 +199,14 @@ class TrajectoryPath:
                         print('Wrong number')
                     
         elif (msg[0]=="load"):
-            if len(msg)>1:    
-                path = path_tools.load_path(msg[1])
+            if len(msg)>1: 
+                if 'mcp' in msg[1]:
+                    mcp = path_tools.load_mcp(msg[1])
+                    path = path_tools.mcp_to_path(mcp)
+                else :
+                    path = path_tools.load_path(msg[1])
                 self.traj_loaded_path = LapPath('trajectory_loaded',static_frame=self.static_frame,moving_frame=self.moving_frame,path=path)
-
+                self.path_name = msg[1]
                 path_x = []
                 path_y = []
                 path_yaw = []
@@ -215,6 +221,7 @@ class TrajectoryPath:
                 self.course_x = path_x
                 self.course_y = path_y
                 self.course_yaw = path_yaw
+                
             
         elif (msg[0]=="lap"):
             # current_time=rospy.Time.now().to_sec()
@@ -224,11 +231,18 @@ class TrajectoryPath:
             path=copy.deepcopy(self.current_lap_path.path)
             
             self.lap_count += 1
-            self.current_lap_path.init_lap_path('current_lap_path')
+            self.current_lap_path.init_lap_path()
             
             self.laps_path.append(LapPath(f'lap_{len(self.laps_path)+1}_path',static_frame=self.static_frame,moving_frame=self.moving_frame,path=path))
             lap_time=self.current_lap_path.path.header.stamp.to_sec()-self.laps_path[-1].path.header.stamp.to_sec()
-            # print(f'Lap {len(self.laps_path)}: time: {lap_time:.2f}s & distance: {self.laps_path[-1].distance():.2f}m')
+            print(f'Lap {len(self.laps_path)}: time: {lap_time:.2f}s & distance: {self.laps_path[-1].distance():.2f}m')
+            
+            if self.lap_count == self.number_laps + 1:
+                total_lap_time = self.laps_path[-1].path.header.stamp.to_sec() - self.laps_path[1].path.header.stamp.to_sec()
+                
+                print(total_lap_time)
+                
+                path_tools.save_test(self.testing_lap_path.path, self.errors_crosstrack_ext, self.errors_yaw_ext, name='test', ref_path_name=self.path_name, ref_path=None, map_name='test_map1_clean', total_laps = self.number_laps, total_time = total_lap_time)
             
     def normalize_angle(self, angle):
         # adapted from: https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathTracking/stanley_controller
@@ -253,9 +267,10 @@ class TrajectoryPath:
         error_front_axle = min(d)
         target_idx = d.index(error_front_axle)
         # print(target_idx)
+        
 
         error_yaw = self.normalize_angle(course_yaw[target_idx] - yaw)
-            
+
         
         return error_front_axle, error_yaw       
 
@@ -292,10 +307,11 @@ class TrajectoryPath:
         
         self.traj_path.update(pose)
         self.current_lap_path.update(pose)
-        if self.lap_count > 0 and  self.lap_count < 6 :
+        if self.lap_count > 0 and  self.lap_count < self.number_laps + 1 :
             self.testing_lap_path.update(pose)
             
             if self.calculate_error :
+                
                 error_crosstrack_ext, error_yaw_ext = self.calc_error(pos[0], pos[1], yaw ,self.course_x, self.course_y, self.course_yaw)
                 
                 self.errors_crosstrack_ext.append(error_crosstrack_ext)
