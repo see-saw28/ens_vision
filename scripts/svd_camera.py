@@ -135,6 +135,14 @@ def callback(msg):
         br = tf.TransformBroadcaster()
         rate = rospy.Rate(30)
         
+        check_svd = di - df
+        
+        error = np.sqrt(check_svd[:,0]**2+check_svd[:,1]**2+check_svd[:,2]**2)
+        
+        print('error for each point in meters :', error)
+        
+        
+        
         import os
         def check_file(filePath):
             if os.path.exists(filePath):
@@ -158,7 +166,7 @@ def callback(msg):
         pickle.dump([pos,quat,'map','camera'], f)
         f.close()
         
-        print('saved mcp path :', filename)
+        print('saved tf :', filename)
         
         
         while not rospy.is_shutdown():

@@ -100,11 +100,12 @@ def load_mcp(name):
    
     
     
-def load_path(name):
+def load_path(name, absolute_path=False):
     
-    
-     
-    f = open(rospack.get_path('ens_vision')+f'/paths/{name}.pckl', 'rb')
+    if absolute_path :
+        f = open(name, 'rb')
+    else : 
+        f = open(rospack.get_path('ens_vision')+f'/paths/{name}.pckl', 'rb')
     
     path = pickle.load(f)
     f.close()
@@ -182,6 +183,21 @@ def xy_to_path(X,Y):
         
     return path
 
+def path_to_xyyaw(path):
+    path_x = []
+    path_y = []
+    path_yaw = []
+    
+    
+    for i, pose in enumerate(path.poses):
+        path_x.append(pose.pose.position.x)
+        path_y.append(pose.pose.position.y)
+        orientation_list = [pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w]
+        _, _, yaw = euler_from_quaternion(orientation_list)
+        path_yaw.append(yaw)
+        
+    return path_x, path_y, path_yaw
+
 def save_error(crosstrack,yaw, name='error',test=False):
     
     if test :
@@ -218,11 +234,10 @@ def load_error(name, absolute=False, test=False):
     else :
         return error[0],error[1]
     
-def save_test(path, crosstrack, yaw, name='test', ref_path_name='', ref_path=None, map_name='test_map1_clean', total_laps = 0, total_time = 0):
+def save_test(path, name='test', ref_path_name='', ref_path=None, map_name='test_map1_clean', total_laps = 0, total_time = 0):
     
     filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.yaml')
     name=filename.split('/')[-1].split('.')[0]
-    error_path = save_error(crosstrack, yaw, name+'_error',test=True)
     traj_path = save_path(path, name+'_traj',test=True) 
     if ref_path != None:
         
@@ -233,7 +248,7 @@ def save_test(path, crosstrack, yaw, name='test', ref_path_name='', ref_path=Non
     driving_mode = rospy.get_param('joy_to_cmd_vel/driving_mode')
     speed = rospy.get_param('joy_to_cmd_vel/max_velocity')
         
-    test_data = {'error_filename':error_path, 'path_filename':traj_path, 'ref_traj_name':ref_path_name, 'ref_path_filename':ref_traj_path, 'map_name':map_name, 'driving_mode':driving_mode, 'speed':speed, 'total_laps':total_laps,'total_time':total_time}
+    test_data = {'path_filename':traj_path, 'ref_traj_name':ref_path_name, 'ref_path_filename':ref_traj_path, 'map_name':map_name, 'driving_mode':driving_mode, 'speed':speed, 'total_laps':total_laps,'total_time':total_time}
    
     filename=check_file(rospack.get_path('ens_vision')+f'/tests/{name}.yaml')
     

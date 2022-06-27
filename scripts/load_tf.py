@@ -34,7 +34,7 @@ def path():
 
     br = tf.TransformBroadcaster()
     
-    map_name = 'test_map_7'
+    map_name = 'map5'
     
     import rospkg
     rospack = rospkg.RosPack()

@@ -128,12 +128,17 @@ class TrajectoryPath:
         self.static_frame = static_frame
         self.moving_frame = moving_frame
         self.moving_frame1 = moving_frame1
+        
+        if moving_frame == 'base_link':
+            self.suffix = '_amcl'
+        else :
+            self.suffix = '_aruco'
         self.doubleAruco = doubleAruco
         # rospy.Subscriber("/arm_1/arm_controller/cartesian_velocity_command",TwistStamped, self.event_in_cb)
-        self.traj_path = LapPath('trajectory',static_frame=self.static_frame,moving_frame=self.moving_frame)
-        self.traj_loaded_path = LapPath('trajectory_loaded',static_frame=self.static_frame,moving_frame=self.moving_frame)
-        self.current_lap_path = LapPath('current_lap_path',static_frame=self.static_frame,moving_frame=self.moving_frame)
-        self.testing_lap_path = LapPath('testing_lap_path',static_frame=self.static_frame,moving_frame=self.moving_frame)
+        self.traj_path = LapPath('trajectory'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
+        self.traj_loaded_path = LapPath('trajectory_loaded'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
+        self.current_lap_path = LapPath('current_lap_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
+        self.testing_lap_path = LapPath('testing_lap_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.laps_path = []
         self.command_subscriber = rospy.Subscriber("syscommand", String, self.callback)
         self.ds4_cmd = rospy.Subscriber("cmd_vel", Twist, self.ds4_callback)
@@ -142,9 +147,6 @@ class TrajectoryPath:
         rospy.sleep(0.5)
         self.time = rospy.Time.now().to_sec()
         self.cmd_speed = 0
-        self.errors_crosstrack_ext = []
-        self.errors_yaw_ext = []
-        self.calculate_error = True
         self.number_laps = 5
         
        
@@ -175,7 +177,7 @@ class TrajectoryPath:
                     
                 elif msg[1]=='last':
                     
-                    path_tools.save_path(self.laps_path[-1].path)
+                    path_tools.save_path(self.laps_path[-1].path, self.suffix)
                     
                 elif msg[1]=='test':
                     if len(msg)>2:
@@ -183,18 +185,12 @@ class TrajectoryPath:
                         path_tools.save_path(self.testing_lap_path.path,name)
                         
                     else :
-                        path_tools.save_path(self.testing_lap_path.path)
-                elif msg[1]=='error':
-                    if len(msg)>2:
-                        name = msg[2]
-                        path_tools.save_error(self.errors_crosstrack_ext, self.errors_yaw_ext ,name)
-                        
-                    else :
-                        path_tools.save_error(self.errors_crosstrack_ext, self.errors_yaw_ext) 
+                        path_tools.save_path(self.testing_lap_path.path,self.suffix)
+                
                 else :
                     try :
                         lap_number = int(msg[1])
-                        path_tools.save_path(self.laps_path[lap_number-1].path)
+                        path_tools.save_path(self.laps_path[lap_number-1].path, self.suffix)
                     except :
                         print('Wrong number')
                     
@@ -205,22 +201,9 @@ class TrajectoryPath:
                     path = path_tools.mcp_to_path(mcp)
                 else :
                     path = path_tools.load_path(msg[1])
-                self.traj_loaded_path = LapPath('trajectory_loaded',static_frame=self.static_frame,moving_frame=self.moving_frame,path=path)
+                self.traj_loaded_path = LapPath('trajectory_loaded'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame,path=path)
                 self.path_name = msg[1]
-                path_x = []
-                path_y = []
-                path_yaw = []
-                
-                for i, pose in enumerate(path.poses):
-                    path_x.append(pose.pose.position.x)
-                    path_y.append(pose.pose.position.y)
-                    orientation_list = [pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w]
-                    _, _, yaw = euler_from_quaternion(orientation_list)
-                    path_yaw.append(yaw)
-                
-                self.course_x = path_x
-                self.course_y = path_y
-                self.course_yaw = path_yaw
+               
                 
             
         elif (msg[0]=="lap"):
@@ -233,7 +216,7 @@ class TrajectoryPath:
             self.lap_count += 1
             self.current_lap_path.init_lap_path()
             
-            self.laps_path.append(LapPath(f'lap_{len(self.laps_path)+1}_path',static_frame=self.static_frame,moving_frame=self.moving_frame,path=path))
+            self.laps_path.append(LapPath(f'lap_{len(self.laps_path)+1}_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame,path=path))
             lap_time=self.current_lap_path.path.header.stamp.to_sec()-self.laps_path[-1].path.header.stamp.to_sec()
             print(f'Lap {len(self.laps_path)}: time: {lap_time:.2f}s & distance: {self.laps_path[-1].distance():.2f}m')
             
@@ -242,38 +225,9 @@ class TrajectoryPath:
                 
                 print(total_lap_time)
                 
-                path_tools.save_test(self.testing_lap_path.path, self.errors_crosstrack_ext, self.errors_yaw_ext, name='test', ref_path_name=self.path_name, ref_path=None, map_name='test_map1_clean', total_laps = self.number_laps, total_time = total_lap_time)
+                path_tools.save_test(self.testing_lap_path.path, name='test'+self.suffix, ref_path_name=self.path_name, ref_path=None, map_name='map5', total_laps = self.number_laps, total_time = total_lap_time)
             
-    def normalize_angle(self, angle):
-        # adapted from: https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathTracking/stanley_controller
-
-        while angle > np.pi:
-            angle -= 2.0 * np.pi
-
-        while angle < -np.pi:
-            angle += 2.0 * np.pi
-
-        return angle           
-           
-    def calc_error(self, x, y, yaw, course_x, course_y, course_yaw):
-        # adapted from: https://github.com/AtsushiSakai/PythonRobotics/tree/master/PathTracking/stanley_controller
-
-        
-
-        # Search nearest point index
-        dx = [x - icx for icx in course_x]
-        dy = [y - icy for icy in course_y]
-        d = [np.sqrt(idx ** 2 + idy ** 2) for (idx, idy) in zip(dx, dy)]
-        error_front_axle = min(d)
-        target_idx = d.index(error_front_axle)
-        # print(target_idx)
-        
-
-        error_yaw = self.normalize_angle(course_yaw[target_idx] - yaw)
-
-        
-        return error_front_axle, error_yaw       
-
+    
 
     def update(self):
         pos, quat = self.tl.lookupTransform(self.static_frame,self.moving_frame,rospy.Time())
@@ -295,9 +249,10 @@ class TrajectoryPath:
             yaw = np.arctan2(y1 - pos[1], x1 - pos[0])
             
             quat = quaternion_from_euler(0,0,yaw)
+            _,_,yaw = euler_from_quaternion(quat)
             
         else :
-            _,_,yaw = euler_from_quaternion(**quat)
+            _,_,yaw = euler_from_quaternion(quat)
         
         pose.pose.orientation.x = quat[0]
         pose.pose.orientation.y = quat[1]
@@ -305,19 +260,13 @@ class TrajectoryPath:
         pose.pose.orientation.w = quat[3]
         
         
-        self.traj_path.update(pose)
+        # self.traj_path.update(pose)
         self.current_lap_path.update(pose)
         if self.lap_count > 0 and  self.lap_count < self.number_laps + 1 :
             self.testing_lap_path.update(pose)
             
-            if self.calculate_error :
-                
-                error_crosstrack_ext, error_yaw_ext = self.calc_error(pos[0], pos[1], yaw ,self.course_x, self.course_y, self.course_yaw)
-                
-                self.errors_crosstrack_ext.append(error_crosstrack_ext)
-                self.errors_yaw_ext.append(error_yaw_ext)
-                # print(len(self.errors_crosstrack_ext))
-        self.traj_loaded_path.publish()
+            
+        # self.traj_loaded_path.publish()
          
         for lap in self.laps_path:
             lap.publish()
@@ -333,11 +282,13 @@ if __name__ == '__main__':
         trajectory_interactive_path = TrajectoryPath(static_frame=static_frame_id, moving_frame=moving_frame_id)
     else :
         
-        trajectory_interactive_path = TrajectoryPath(static_frame='map', moving_frame='marker_0', moving_frame1='marker_1',doubleAruco=True)
+        trajectory_aruco = TrajectoryPath(static_frame='map', moving_frame='marker_0', moving_frame1='marker_1',doubleAruco=True)
+        trajectory_amcl = TrajectoryPath(static_frame='map', moving_frame='base_link', doubleAruco=False)
     while not rospy.is_shutdown():
         try:
 
-            trajectory_interactive_path.update()
+            trajectory_aruco.update()
+            trajectory_amcl.update()
 
             
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
@@ -346,4 +297,4 @@ if __name__ == '__main__':
             continue
 
        
-        trajectory_interactive_path.rate.sleep()
+        trajectory_aruco.rate.sleep()

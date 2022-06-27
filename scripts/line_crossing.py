@@ -55,12 +55,12 @@ def navigation():
     rate = rospy.Rate(pub_freq)
     tl = tf.TransformListener()
     
-    xa=-1.1
-    ya=1.74
+    xa=0
+    ya=1.9
     A=complex(xa,ya)
     
-    xb=-0.71
-    yb=2.64
+    xb=0
+    yb=2.84
     
     B=complex(xb,yb)
     AB=A-B

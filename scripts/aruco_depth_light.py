@@ -160,10 +160,7 @@ def aruco():
                      cY = int((topLeft[1] + bottomRight[1]) / 2.0)
                      
                      
-                     if markerID<2:
-                         size=0.8
-                     else:
-                         pass
+                     
                      
                      
                      
@@ -187,12 +184,12 @@ def aruco():
                      
                           
                      
-                     
+                     if z > 0 :
                     
-                     br.sendTransform((x,y,z),
-                                     (0,0,0,1),
-                                     rospy.Time.now(),f"marker_{ids[i]}","camera")
-                         
+                         br.sendTransform((x,y,z),
+                                         (0,0,0,1),
+                                         rospy.Time.now(),f"marker_{ids[i]}","camera")
+                             
          
             
                      
