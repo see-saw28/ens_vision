@@ -139,7 +139,7 @@ class TrajectoryPath:
         self.traj_loaded_path = LapPath('trajectory_loaded'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.current_lap_path = LapPath('current_lap_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
         self.testing_lap_path = LapPath('testing_lap_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame)
-        self.laps_path = []
+        self.laps_time = [rospy.Time.now().to_sec()]
         self.command_subscriber = rospy.Subscriber("syscommand", String, self.callback)
         self.ds4_cmd = rospy.Subscriber("cmd_vel", Twist, self.ds4_callback)
         self.rate = rospy.Rate(30)
@@ -165,9 +165,7 @@ class TrajectoryPath:
             self.testing_lap_path.init_lap_path()
             if(len(msg)>1 and msg[1]=="all"):
 
-                self.laps_path=[]
-                self.errors_crosstrack_ext = []
-                self.errors_yaw_ext = []
+                self.laps_time=[rospy.Time.now().to_sec()]
                 self.lap_count = 0
 
         elif (msg[0]=="save"):
@@ -211,32 +209,31 @@ class TrajectoryPath:
             # lap_time = current_time - self.time
             # self.time = current_time
             # print('Lap time:' ,lap_time)
-            path=copy.deepcopy(self.current_lap_path.path)
 
+            self.laps_time.append(rospy.Time.now().to_sec())
             self.lap_count += 1
-            self.current_lap_path.init_lap_path()
 
-            self.laps_path.append(LapPath(f'lap_{len(self.laps_path)+1}_path'+self.suffix,static_frame=self.static_frame,moving_frame=self.moving_frame,path=path))
-            lap_time=self.current_lap_path.path.header.stamp.to_sec()-self.laps_path[-1].path.header.stamp.to_sec()
-            print(f'Lap {len(self.laps_path)}: time: {lap_time:.2f}s & distance: {self.laps_path[-1].distance():.2f}m')
+
+
+            lap_time=self.laps_time[-1]-self.laps_time[-2]
+            print(f'Lap {self.lap_count}: time: {lap_time:.2f}s')
 
             if self.lap_count == self.number_laps + 1:
-                total_lap_time = self.laps_path[-1].path.header.stamp.to_sec() - self.laps_path[1].path.header.stamp.to_sec()
+                total_lap_time = self.laps_time[-1] - self.laps_time[1]
 
                 print(total_lap_time)
 
-                path_tools.save_test(self.testing_lap_path.path, name='test'+self.suffix, ref_path_name=self.path_name, ref_path=None, map_name='map5', total_laps = self.number_laps, total_time = total_lap_time)
+                path_tools.save_test(self.testing_lap_path.path, name='test'+self.suffix, ref_path_name=self.path_name, ref_path=None, map_name='map5', total_laps = self.number_laps, total_time = total_lap_time, laps_time = self.laps_time)
 
 
 
     def update(self):
         pos, quat = self.tl.lookupTransform(self.static_frame,self.moving_frame,rospy.Time())
 
-
         pose = PoseStamped()
 
         pose.header.frame_id = self.static_frame
-
+        pose.header.stamp = rospy.Time.now()
 
         pose.pose.position.x = pos[0]
         pose.pose.position.y = pos[1]
@@ -260,15 +257,15 @@ class TrajectoryPath:
 
 
         # self.traj_path.update(pose)
-        self.current_lap_path.update(pose)
+        # self.current_lap_path.update(pose)
         if self.lap_count > 0 and  self.lap_count < self.number_laps + 1 :
             self.testing_lap_path.update(pose)
 
 
         # self.traj_loaded_path.publish()
 
-        for lap in self.laps_path:
-            lap.publish()
+        # for lap in self.laps_path:
+        #     lap.publish()
 
         # rospy.loginfo('msg published')
 
@@ -297,3 +294,4 @@ if __name__ == '__main__':
 
 
         trajectory_aruco.rate.sleep()
+

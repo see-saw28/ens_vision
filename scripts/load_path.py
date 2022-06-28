@@ -11,7 +11,7 @@ Created on Fri May 13 21:08:12 2022
 import time
 import rospy
 import numpy as np
-from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped 
+from geometry_msgs.msg import Pose, Point, Quaternion,PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
 from visualization_msgs.msg import Marker
@@ -38,8 +38,8 @@ def path(filename='path'):
     rospy.init_node('ros_path', anonymous=False)
     rate = rospy.Rate(10)
 
-	
-	
+
+
     obj = Path()
 
     while not rospy.is_shutdown():
@@ -57,8 +57,8 @@ if __name__ == '__main__':
         if (len(sys.argv)>1):
             filename=sys.argv[1]
         else :
-            filename='test_6_traj'
-           
+            filename='test_aruco_18'
+
         path(filename)
     except rospy.ROSInterruptException:
         pass
