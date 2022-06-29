@@ -42,14 +42,29 @@ def save_tf(pos, quat, child_frame, parent_frame, name='tf'):
 
     return filename
 
-def load_tf(name, absolute_path=False, rate=100):
+
+def publish_tf(pos, quat, child_frame, parent_frame,name='tf', rate=100):
 
 
 
-    rospy.init_node(f'load_tf_{name}', anonymous=False)
+
     RATE = rospy.Rate(rate)
 
     br = tf.TransformBroadcaster()
+
+
+
+    while not rospy.is_shutdown():
+
+
+        br.sendTransform(pos,quat,rospy.Time.now(),child_frame, parent_frame)
+        # print(map_frame_id)
+
+        RATE.sleep()
+
+
+def load_tf(name, absolute_path=False, rate=100):
+
 
 
 
@@ -63,15 +78,11 @@ def load_tf(name, absolute_path=False, rate=100):
     print(pos,quat)
     f.close()
 
+    rospy.init_node(f'load_tf_{name}', anonymous=False)
+
+    publish_tf(pos, quat, child_frame, parent_frame,name=name, rate=100)
 
 
-    while not rospy.is_shutdown():
-
-
-        br.sendTransform(pos,quat,rospy.Time.now(),child_frame, parent_frame)
-        # print(map_frame_id)
-
-        RATE.sleep()
 
 
 

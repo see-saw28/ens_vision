@@ -95,7 +95,7 @@ frame_1='marker_1'
 frame_2='marker_2'
 
 map_frame_id='map'
-map_name = 'test_map'
+map_name = 'map5'
 
 number_of_points = 6
 
@@ -143,7 +143,9 @@ def callback(msg):
 
 
 
-        tf_tools.save_tf(pos,quat,'map','camera')
+        tf_tools.save_tf(pos,quat,'map','camera',name=map_name)
+
+        tf_tools.publish_tf(pos, quat, 'map', 'camera',name=map_name, rate=100)
 
 
 
