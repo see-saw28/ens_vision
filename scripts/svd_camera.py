@@ -32,23 +32,23 @@ def svd_transform(si,di):
     d=di.reshape((len(di),3,1))
     s_b=np.mean(s,axis=0)
     d_b=np.mean(d,axis=0)
-    
+
     d_c=d-d_b
     s_c=s-s_b
-    
+
     H=np.zeros((3,3))
     for i in range(len(s)):
         H+=np.dot(s_c[i],np.transpose(d_c[i]))
-        
+
     # H=H/len(s)
-    
+
     # H=np.dot(s_c.reshape((3,3)),np.transpose(d_c.reshape(3,3)))
-    
+
     U,S,V = np.linalg.svd(H)
-    
+
     V=np.transpose(V)
-    
-    
+
+
     R=np.dot(V,np.transpose(U))
     # print(R)
     if(np.linalg.det(R)<0):
@@ -57,10 +57,10 @@ def svd_transform(si,di):
         V_p[:,2]=-V[:,2]
         # print(V_p)
         R=np.dot(V_p,np.transpose(U))
-    
-    
+
+
     T=d_b-np.dot(R,s_b)
-    
+
     df=np.transpose(np.dot(R,np.transpose(si))+T)
     return (R,T,df)
 
@@ -87,6 +87,7 @@ import tf
 from geometry_msgs.msg import PointStamped
 from tf.transformations import quaternion_from_matrix
 import pickle
+import tf_tools
 
 
 frame_0='marker_0'
@@ -119,10 +120,10 @@ def callback(msg):
     di[i%number_of_points] = tl.lookupTransform('camera', f'marker_{i}', rospy.Time())[0]
     print(di)
     if i%number_of_points==(number_of_points-1):
-     
-        
+
+
         R,T,df=svd_transform(si, di)
-        
+
         pos = T
         rotation_matrix = np.array([[0, 0, 0, 0],
                                    [0, 0, 0, 0],
@@ -132,72 +133,40 @@ def callback(msg):
         rotation_matrix[:3, :3] = R
         quat = quaternion_from_matrix(rotation_matrix)
         print(R)
-        br = tf.TransformBroadcaster()
-        rate = rospy.Rate(30)
-        
-        check_svd = di - df
-        
-        error = np.sqrt(check_svd[:,0]**2+check_svd[:,1]**2+check_svd[:,2]**2)
-        
-        print('error for each point in meters :', error)
-        
-        
-        
-        import os
-        def check_file(filePath):
-            if os.path.exists(filePath):
-                numb = 1
-                while True:
-                    newPath = "{0}_{2}{1}".format(*os.path.splitext(filePath) + (numb,))
-                    if os.path.exists(newPath):
-                        numb += 1
-                    else:
-                        return newPath
-            return filePath 
-        
-        import rospkg
-        rospack = rospkg.RosPack()
-        
-        
-             
-        filename=check_file(rospack.get_path('ens_voiture_autonome')+f'/tf/{map_name}.pckl')
-        
-        f = open(filename, 'wb')
-        pickle.dump([pos,quat,'map','camera'], f)
-        f.close()
-        
-        print('saved tf :', filename)
-        
-        
-        while not rospy.is_shutdown():
 
-            
-            br.sendTransform(pos,quat,rospy.Time.now(),map_frame_id,'camera')
-            
-            
-            rate.sleep()
-        
-        
+
+        check_svd = di - df
+
+        error = np.sqrt(check_svd[:,0]**2+check_svd[:,1]**2+check_svd[:,2]**2)
+
+        print('error for each point in meters :', error)
+
+
+
+        tf_tools.save_tf(pos,quat,'map','camera')
+
+
+
     i+=1
-    
-    
-if __name__ == '__main__':    
+
+
+if __name__ == '__main__':
     i=0
     di=np.zeros((number_of_points,3))
     si=np.zeros((number_of_points,3))
     rospy.init_node('svd')
     tl = tf.TransformListener()
-    
+
     try:
         rospy.Subscriber("clicked_point", PointStamped, callback)
-        
+
         rospy.spin()
-        
-        
+
+
     except rospy.ROSInterruptException:
-           
+
             pass
-    
+
     # R,T,df=svd_transform(si, di)
 
 

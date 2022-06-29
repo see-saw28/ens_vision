@@ -57,7 +57,7 @@ if __name__ == '__main__':
         if (len(sys.argv)>1):
             filename=sys.argv[1]
         else :
-            filename='test_aruco_18'
+            filename='test_aruco_18_traj'
 
         path(filename)
     except rospy.ROSInterruptException:

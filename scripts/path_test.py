@@ -279,12 +279,12 @@ if __name__ == '__main__':
     else :
 
         trajectory_aruco = TrajectoryPath(static_frame='map', moving_frame='marker_0', moving_frame1='marker_1',doubleAruco=True)
-        trajectory_amcl = TrajectoryPath(static_frame='map', moving_frame='base_link', doubleAruco=False)
+        # trajectory_amcl = TrajectoryPath(static_frame='map', moving_frame='base_link', doubleAruco=False)
     while not rospy.is_shutdown():
         try:
 
             trajectory_aruco.update()
-            trajectory_amcl.update()
+            # trajectory_amcl.update()
 
 
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:

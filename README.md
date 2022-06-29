@@ -11,6 +11,17 @@
 
 ## Realsense D435
 
+### Installation
+
+https://github.com/IntelRealSense/realsense-ros/blob/development/README.md#installation-instructions
+
+
+```bat
+sudo apt-get install ros-$ROS_DISTRO-realsense2-camera
+```
+et l'installation du sdk
+https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages
+
 ### Published topics
 
 * /camera/depth/image_rect_raw

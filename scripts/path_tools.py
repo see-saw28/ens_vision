@@ -183,10 +183,11 @@ def xy_to_path(X,Y):
 
     return path
 
-def path_to_xyyaw(path):
+def path_to_xyyaw(path,time=False):
     path_x = []
     path_y = []
     path_yaw = []
+    path_time = []
 
 
     for i, pose in enumerate(path.poses):
@@ -195,8 +196,13 @@ def path_to_xyyaw(path):
         orientation_list = [pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w]
         _, _, yaw = euler_from_quaternion(orientation_list)
         path_yaw.append(yaw)
+        if time :
+            path_time.append(pose.header.stamp.to_sec())
 
-    return path_x, path_y, path_yaw
+    if time :
+        return path_x, path_y, path_yaw, path_time
+    else :
+        return path_x, path_y, path_yaw
 
 def save_error(crosstrack,yaw, name='error',test=False):
 

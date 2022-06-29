@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<launch>
+	
+<include file="$(find ens_vision)/launch/d435.launch">
+<arg name="enable_depth" value="true" />
+</include>
+
+<node name="aruco" pkg="ens_vision" type="aruco_depth_amcl_pose.py" output="screen" >
+ 	<param name="adaptiveThreshWinSizeMin" value="3"/>
+    	<param name="adaptiveThreshWinSizeMax" value="23" />
+    	<param name="adaptiveThreshWinSizeStep" value="5" />
+	<param name="adaptiveThreshConstant" value="7" type="double"/>
+	<param name="minMarkerPerimeterRate" value="0.03" type="double"/>
+	<param name="polygonalApproxAccuracyRate" value="0.03" type="double"/>
+	<param name="cornerRefinementMethod" value="0" type="int"/>
+	<param name="perspectiveRemovePixelPerCell" value="4" type="int"/>
+	<param name="maxErroneousBitsInBorderRate" value="0.35" type="double"/>
+	<param name="errorCorrectionRate" value="0.6" type="double"/>         
+</node>
+<!-- <node name="line_crossing" pkg="ens_vision" type="line_crossing.py" output="screen" />-->
+
+
+
+<node pkg="rviz" type="rviz" name="rviz"
+	    args="-d $(find ens_vision)/rviz/aruco_path.rviz"/>
+
+</launch>
