@@ -97,7 +97,7 @@ Load the trajectory files to compute the error
 ## Save a TF
 
 Need the position vector and the quaternion :
-```
+```python
 tl = tf.TransformListener()
 pos,quat = tl.lookupTransform(child_frame, parent_frame, rospy.Time())
 ```
@@ -106,7 +106,7 @@ Then save a pickle file with [pos, quat, child_frame, parent_frame]
 ## Load a TF
 
 Load a pickle file with [pos, quat, child_frame, parent_frame] then publish the tf with :
-```
+```python
 br = tf.TransformBroadcaster()
 br.sendTransform(pos,quat,rospy.Time.now(),child_frame, parent_frame)
 ```
