@@ -105,7 +105,13 @@ Load the trajectory files to compute the error
 
 * Pickle
 
-## Save a TF
+## Save a TF 
+
+Python script :
+```bash
+rosrun ens_vision save_tf.py child_frame parent_frame
+```
+Or python function :
 
 Need the position vector and the quaternion :
 ```python
@@ -114,13 +120,32 @@ pos,quat = tl.lookupTransform(child_frame, parent_frame, rospy.Time())
 ```
 Then save a pickle file with [pos, quat, child_frame, parent_frame]
 
+```python
+tf_tools.save_tf(pos, quat,child_frame,parent_frame)
+```
+
+
 ## Load a TF
 
-Load a pickle file with [pos, quat, child_frame, parent_frame] then publish the tf with :
+Python script :
+```bash
+rosrun ens_vision tf_tools tf_name
+```
+
+Or python function :
+
+Load a pickle file with [pos, quat, child_frame, parent_frame] :
+```python
+tf_tools.load_tf(name, absolute_path=False, rate=100)
+```
+then publish the tf with :
 ```python
 br = tf.TransformBroadcaster()
 br.sendTransform(pos,quat,rospy.Time.now(),child_frame, parent_frame)
 ```
+
+
+
 # Path tools
 
 ## Requirement
