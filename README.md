@@ -64,7 +64,7 @@ https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linu
 
 ### Save data
 
-Save the tf in a file to open it later
+Save the tf in a file to open it later, cf [TF tools](#tf-tools)
 
 # Trajectory recorder
 
@@ -166,7 +166,7 @@ The seven columns are structured as follows:
 
 * `x_m`: float32, meter. X-coordinate of raceline point.
 * `y_m`: float32, meter. Y-coordinate of raceline point.
-* `psi_rad`: float32, rad. Heading of raceline in current point from -pi to +pi rad. Zero is north (along y-axis).
+* `psi_rad`: float32, rad. Heading of raceline in current point from -pi to +pi rad. **Zero is along x-axis** (instead of y-axis like TUMTF).
 * `kappa_radpm`: float32, rad/meter. Curvature of raceline in current point.
 * `vx_mps`: float32, meter/second. Target velocity in current point.
 * `ax_mps2`: float32, meter/second². Target acceleration in current point. We assume this acceleration to be constant
