@@ -9,8 +9,10 @@
       * [Save a TF](#save-a-tf)
       * [Load a TF](#load-a-tf)
    * [Path tools](#path-tools)
+      * [Path type](#path-type)
       * [Save a path](#save-a-path)
       * [Load a path](#load-a-path)
+      * [Convert path](#convert-path)
    
    
 # Aruco detection
@@ -179,7 +181,7 @@ The seven columns are structured as follows:
 * `vx_mps`: float32, meter/second. Target velocity in current point.
 * `ax_mps2`: float32, meter/second². Target acceleration in current point. We assume this acceleration to be constant
   from current point until next point.
-* `s_m`: float32, meter. Curvi-linear distance along the raceline.
+* `s_m`: float32, meter. Curvi-linear distance along the raceline. **This data is moved to seventh column isntead of the first one**
 
 ## Save a path
 
