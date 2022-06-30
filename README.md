@@ -4,6 +4,7 @@
    * [Aruco detection](#aruco-detection)
    * [SVD transform](#svd-transform)
    * [Trajectory recorder](#trajectory-recorder)
+   * [Lap detection](lap-detection)
    * [Plot trajectory errors](#plot-trajectory-errors)
    * [TF tools](#tf-tools)
       * [Save a TF](#save-a-tf)
@@ -102,6 +103,25 @@ or
 ### Save data
 
 Save the traj on files to open it later. And save all the information for the test.
+
+# Lap detection 
+
+* Generate a finish line between two given points on the static_frame_id
+* Detect when moving_frame_id crosses this line
+* Send a message on `/syscommand` topic: "lap"
+
+```bash
+rosrun ens_vision line_crossing.py static_frame_id moving_frame_id
+```
+
+### Required tf transforms
+
+* static_frame_id (default *map*) -> moving_frame_id (default *marker_0*)
+
+### Published topics
+
+* /finish_line
+* /syscommand
 
 # Plot trajectory errors
 
