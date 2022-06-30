@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Thu Jun 30 17:01:02 2022
+
+@author: student
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Jun 28 09:29:26 2022
 
 @author: student
@@ -26,9 +33,9 @@ import rospkg
 rospack = rospkg.RosPack()
 import yaml
 
-plt.close('all')
 
-name = '_26'
+
+names = ['_21']
 
 driving_mode_dict = {0:'MANUAL',1:'Pure Pursuit',2:'Stanley Controller',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FOLLOW THE GAP'}
 
@@ -90,48 +97,103 @@ def calc_errors(traj, ref_path):
 
     return crosstrack_errors, yaw_errors, idx_errors
 
-
-with open(rospack.get_path('ens_vision')+f'/tests/test_aruco{name}.yaml') as file:
-    # The FullLoader parameter handles the conversion from YAML
-    # scalar values to Python the dictionary format
-    param = yaml.load(file, Loader=yaml.FullLoader)
-    label = driving_mode_dict[param['driving_mode']] + f" at {param['speed']}m/s"
-    traj_name=param['path_filename']
-    traj = path_tools.load_path(traj_name, absolute_path=True)
-    x, y, yaw, t = path_tools.path_to_xyyaw(traj,time=True)
-
-with open(rospack.get_path('ens_vision')+f'/tests/test_amcl{name}.yaml') as file:
-    # The FullLoader parameter handles the conversion from YAML
-    # scalar values to Python the dictionary format
-    param = yaml.load(file, Loader=yaml.FullLoader)
-
-    traj_name=param['path_filename']
-    traj_amcl = path_tools.load_path(traj_name, absolute_path=True)
-    x_a, y_a, yaw_a, t_a = path_tools.path_to_xyyaw(traj_amcl,time=True)
-
+for name in names :
+    with open(rospack.get_path('ens_vision')+f'/tests/test_aruco{name}.yaml') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        param = yaml.load(file, Loader=yaml.FullLoader)
+        label = driving_mode_dict[param['driving_mode']] + f" at {param['speed']}m/s"
+        labels.append(label)
+        traj_name=param['path_filename']
+        traj = path_tools.load_path(traj_name, absolute_path=True)
+        ref_traj_name=param['ref_traj_name']
+        ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
+        ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
+        x, y, yaw = path_tools.path_to_xyyaw(traj)
+        crosstrack, yaw, idx = calc_errors(traj, ref_traj)
 print(label)
+for name in names :
+    with open(rospack.get_path('ens_vision')+f'/tests/test_amcl{name}.yaml') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        param = yaml.load(file, Loader=yaml.FullLoader)
+        label = driving_mode_dict[param['driving_mode']] #+ f" at {param['speed']}m/s"
+        labels.append(label)
+        traj_name=param['path_filename']
+        traj = path_tools.load_path(traj_name, absolute_path=True)
+        ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
+        x_a, y_a, yaw_a = path_tools.path_to_xyyaw(traj)
+        crosstrack_a, yaw_a, idx_a = calc_errors(traj, ref_traj)
 
-fig, ax = plt.subplots(1,1)
 
-n = 300
+#%% AFFICHAGE
+n = 150
 
-for i in range(n):
-    ax.plot([y[i],y_a[i]], [-x[i],-x_a[i]], '-')
-    # ax.text(y[i]+i%2*0.02,-x[i],f'{t[i]-t[0]:.3f}')
+plt.close('all')
 
-
-ax.plot(y[0:n],-np.array(x[0:n]),'.', label='aruco')
-ax.plot(y_a[0:n],-np.array(x_a[0:n]),'.',label='AMCL')
-ax.legend()
-
+# Compute gobal error
 localization_error = []
 for i in range(len(x)):
     localization_error.append(np.sqrt((y[i]-y_a[i])**2+ (x[i]-x_a[i])**2))
 
+# Compute crosstrack error and alongtrack error
+index = []
+loca_crosstrack_errors = []
+loca_alongtrack_errors = []
+for i in range(len(idx)) :
+    d = np.abs(idx[i]-idx_a[max(0,i-5):min(i+5,len(idx))]).argmin()
+    index.append(d+max(0,i-5))
+    loca_crosstrack_errors.append(abs(np.sqrt((x[i]-x_a[d+max(0,i-5)])**2+(y[i]-y_a[d+max(0,i-5)])**2)))
+    loca_alongtrack_errors.append(np.sqrt(localization_error[i]**2-loca_crosstrack_errors[i]**2))
 
+#PLot crosstrack error of each measure
+fig, ax = plt.subplots(1,1)
+for i in range(n):
+    ax.plot([y[i],ref_y[idx[i]]], [x[i],ref_x[idx[i]]], 'b-')
+
+for i in range(n):
+    ax.plot([y_a[i],ref_y[idx_a[i]]], [x_a[i],ref_x[idx_a[i]]], 'g-')
+
+ax.plot(y[0:n],x[0:n],'.')
+ax.plot(ref_y,ref_x,'.')
+
+#Plot global error
 fig, ax1 = plt.subplots(1,1)
-ax1.boxplot(localization_error,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+
+for i in range(n):
+    ax1.plot([y[i],y_a[i]], [-x[i],-x_a[i]], '-')
+    # ax.text(y[i]+i%2*0.02,-x[i],f'{t[i]-t[0]:.3f}')
+
+
+ax1.plot(y[0:n],-np.array(x[0:n]),'.', label='aruco')
+ax1.plot(y_a[0:n],-np.array(x_a[0:n]),'.',label='AMCL')
+ax1.legend()
 ax1.set_title('Localization error')
+
+#Plot crosstrack error
+fig, ax2 = plt.subplots(1,1)
+
+for i in range(n):
+    ax2.plot([y[i],y_a[index[i]]], [-x[i],-x_a[index[i]]], '-')
+    # ax.text(y[i]+i%2*0.02,-x[i],f'{t[i]-t[0]:.3f}')
+
+
+ax2.plot(y[0:n],-np.array(x[0:n]),'.', label='aruco')
+ax2.plot(y_a[0:n],-np.array(x_a[0:n]),'.',label='AMCL')
+ax2.legend()
+ax2.set_title('Crosstrack localization error')
+
+
+
+
+#Box plot
+fig, ax3 = plt.subplots(1,1)
+ax3.boxplot([localization_error,loca_crosstrack_errors, loca_crosstrack_errors], labels=['Global error', 'Crosstrack error', 'Alongtrack error'] ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax3.set_title('Localization error')
+
+
+
+
 # fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2)
 # ax1.set_title('Crosstrack error (meter)')
 # ct_dict = ax1.boxplot(crosstracks, labels=labels, showmeans=True, meanline=True, whis=1.5)

@@ -32,24 +32,27 @@ import os
 import pickle
 import rospkg
 rospack = rospkg.RosPack()
+import path_tools
 
 def path(filename='path'):
-    pub = rospy.Publisher('trajectory', Path, queue_size=10)
-    rospy.init_node('ros_path', anonymous=False)
+    pub = rospy.Publisher(f'trajectory_{filename}', Path, queue_size=10)
+    rospy.init_node('ros_path', anonymous=True)
     rate = rospy.Rate(10)
 
+    if 'mcp' in filename :
+        mcp = path_tools.load_mcp(filename)
+        path = path_tools.mcp_to_path(mcp)
+    else :
+        path = path_tools.load_path(filename)
 
 
-    obj = Path()
 
     while not rospy.is_shutdown():
 
-        f = open(rospack.get_path('ens_vision')+f'/tests/{filename}.pckl', 'rb')
-        obj = pickle.load(f)
-        f.close()
 
-        pub.publish(obj)
-        print(len(obj.poses))
+
+        pub.publish(path)
+        print(len(path.poses))
         rate.sleep()
 
 if __name__ == '__main__':

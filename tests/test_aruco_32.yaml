@@ -1,0 +1,16 @@
+driving_mode: 6
+lap_time:
+- 1656597546.911361
+- 1656597589.446724
+- 1656597598.149173
+- 1656597606.7136052
+- 1656597615.0135753
+- 1656597623.4476347
+- 1656597631.6802185
+map_name: map5
+path_filename: /home/student/catkin_ws/src/ens_vision/tests/test_aruco_32_traj.pckl
+ref_path_filename: ''
+ref_traj_name: mcp_8
+speed: 1.25
+total_laps: 5
+total_time: 42.23349452018738

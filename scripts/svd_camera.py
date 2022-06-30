@@ -86,8 +86,7 @@ import rospy
 import tf
 from geometry_msgs.msg import PointStamped
 from tf.transformations import quaternion_from_matrix
-import pickle
-import tf_tools
+from ens_vision import tf_tools
 
 
 frame_0='marker_0'
@@ -150,6 +149,7 @@ def callback(msg):
 
 
     i+=1
+    rospy.loginfo(f'Pick the marker_{i}')
 
 
 if __name__ == '__main__':
@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
     try:
         rospy.Subscriber("clicked_point", PointStamped, callback)
-
+        rospy.loginfo(f'Pick the marker_{i}')
         rospy.spin()
 
 

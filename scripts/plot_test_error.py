@@ -12,7 +12,7 @@ Created on Wed Jun 22 13:39:48 2022
 
 @author: student
 """
-import path_tools
+from ens_vision import path_tools
 import matplotlib.pyplot as plt
 import numpy as np
 import rospkg
@@ -45,9 +45,13 @@ names = ['_11', '_12','_13','_14','_15']
 # #1.5
 # names = ['_15','_14','_22','_26']
 
+# # Aruco vs AMCL localization
 # names = ['_29', '_14']
 
-driving_mode_dict = {0:'MANUAL',1:'PP',2:'SC',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FOLLOW THE GAP'}
+# #FTG
+# names = ['_30', '_31', '_32', '_33', '_34']
+
+driving_mode_dict = {0:'MANUAL',1:'PP',2:'SC',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FTG'}
 
 crosstracks = []
 yaws = []

@@ -1,0 +1,16 @@
+driving_mode: 6
+lap_time:
+- 1656597467.8549647
+- 1656597481.3804276
+- 1656597492.04694
+- 1656597502.5805793
+- 1656597512.8467743
+- 1656597523.1138842
+- 1656597533.3830066
+map_name: map5
+path_filename: /home/student/catkin_ws/src/ens_vision/tests/test_amcl_31_traj.pckl
+ref_path_filename: ''
+ref_traj_name: mcp_8
+speed: 1.0
+total_laps: 5
+total_time: 52.00257897377014
