@@ -5,6 +5,12 @@
    * [SVD transform](#svd-transform)
    * [Trajectory recorder](#trajectory-recorder)
    * [Plot trajectory errors](#plot-trajectory-errors)
+   * [TF tools](#tf-tools)
+      * [Save a TF](#save-a-tf)
+      * [Load a TF](#load-a-tf)
+   * [Path tools](#path-tools)
+      * [Save a path](#save-a-path)
+      * [Load a path](#load-a-path)
    
    
 # Aruco detection
@@ -49,6 +55,8 @@ https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linu
 * camera -> marker_{ID}
 
 # SVD transform
+
+Compute the transformation T and R between the map frame and the camera frame. pos_camera = R*pos_map + T with pos a column vector x,y,z
 
 ### Subscribed topics
 
@@ -173,3 +181,49 @@ The seven columns are structured as follows:
   from current point until next point.
 * `s_m`: float32, meter. Curvi-linear distance along the raceline.
 
+## Save a path
+
+Save a ROS Path with the python function :
+```python
+filename = path_tools.save_path(ros_path, name='path', test=False)
+```
+
+Or save a MCP path with the python function :
+```python
+filename = path_tools.save_mcp(mcp_path)
+```
+
+By default the files are saved in the `/paths` but it can be changed to the `/tests` directory with the argument *test*.
+
+## Load a path
+
+Load a ROS path with this python function :
+```python
+ros_path = load_path(name, absolute_path=False)
+```
+`name` can either be the filename (without the extension) or the absolute path of the file if `absolute_path`. By default the files are opened from the `/paths` directory.
+
+Load a MCP path with this python function :
+```python
+mcp_path = load_mcp(name)
+```
+
+## Convert path
+
+### MCP to ROS
+```python
+ros_path = path_tools.mcp_to_path(mcp_path)
+```
+This function can also be used to transform a [x,y,yaw] array to ROS path.
+
+### X,Y to ROS
+Compute the yaw along the path and create a ROS path from X and Y coordinates
+```python
+ros_path = path_tools.xy_to_path(X,Y)
+```
+
+### ROS to X,Y, Yaw, t 
+Generate X, Y and Yaw list (+ time list if pose are timestamped and `time')
+```python
+X, Y, Yaw (, t) = path_tools.path_to_xyyaw(ros_path,time=False)
+```
