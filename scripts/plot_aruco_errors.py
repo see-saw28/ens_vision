@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Mon Jul  4 13:42:22 2022
+
+@author: student
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Jun 28 09:29:26 2022
 
 @author: student
@@ -25,11 +32,14 @@ import numpy as np
 import rospkg
 rospack = rospkg.RosPack()
 import yaml
+from scipy import signal
 
 plt.close('all')
 
 #PP
 names = ['_11', '_12','_13','_14','_15']
+
+# names =['_11']
 
 #SC cannot achieve 5 laps at 1.5m/s
 names += ['_16','_17','_18']
@@ -38,7 +48,7 @@ names += ['_16','_17','_18']
 names += ['_19','_20','_21','_22']
 
 #DWA
-names += ['_23','_24','_25','_26']
+names += ['_23','_24','_25']
 
 # #0.75
 # names = ['_11','_16','_19','_23']
@@ -56,7 +66,7 @@ names += ['_23','_24','_25','_26']
 # names = ['_29', '_14']
 
 #FTG
-names += ['_30', '_31', '_32', '_33', '_34']
+# names += ['_30', '_31', '_32', '_33', '_34']
 
 driving_mode_dict = {0:'MANUAL',1:'Pure Pursuit',2:'Stanley Controller',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FOLLOW THE GAP'}
 
@@ -118,8 +128,12 @@ def calc_errors(traj, ref_path):
 
     return crosstrack_errors, yaw_errors, idx_errors
 
-loca_time_delays = []
-loca_mean_time_delays = []
+aruco_ct_errors = []
+aruco_yaw_errors = []
+aruco_xy_errors = []
+aruco_ct_errors_all = []
+aruco_yaw_errors_all = []
+aruco_xy_errors_all = []
 labels = []
 
 for name in names :
@@ -132,61 +146,78 @@ for name in names :
         traj_name=param['path_filename']
         traj = path_tools.load_path(traj_name, absolute_path=True)
         x, y, yaw, t = path_tools.path_to_xyyaw(traj,time=True)
-        ref_traj_name=param['ref_traj_name']
-        ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
-        crosstrack, yaw, idx = calc_errors(traj, ref_traj)
 
-    with open(rospack.get_path('ens_vision')+f'/tests/test_amcl{name}.yaml') as file:
-        # The FullLoader parameter handles the conversion from YAML
-        # scalar values to Python the dictionary format
-        param = yaml.load(file, Loader=yaml.FullLoader)
+        x_m = signal.savgol_filter(x, 25,3)
+        y_m = signal.savgol_filter(y, 25,3)
+        yaw_m = signal.savgol_filter(yaw, 35,3)
+        mean_traj = path_tools.xy_to_path(x_m, y_m)
+        aruco_crosstrack, aruco_yaw, idx = calc_errors(traj, mean_traj)
 
-        traj_name=param['path_filename']
-        traj_amcl = path_tools.load_path(traj_name, absolute_path=True)
-        x_a, y_a, yaw_a, t_a = path_tools.path_to_xyyaw(traj_amcl,time=True)
-        crosstrack_a, yaw_a, idx_a = calc_errors(traj_amcl, ref_traj)
+        xy_error = np.sqrt((x-x_m)**2+(y-y_m)**2)
 
-    index = []
-    loca_crosstrack_errors = []
-    loca_alongtrack_errors = []
-    loca_time_delay = []
-    for i in range(len(idx)) :
-        d = np.abs(idx[i]-idx_a[max(0,i-5):min(i+5,len(idx))]).argmin()
-        index.append(d+max(0,i-5))
-        loca_time_delay.append(t_a[d+max(0,i-5)]-t[i])
 
-    loca_time_delays.append(np.array(loca_time_delay))
-    loca_mean_time_delays.append(np.mean(loca_time_delay))
+
+
+    aruco_ct_errors.append(aruco_crosstrack)
+    aruco_yaw_errors.append(aruco_yaw)
+    aruco_xy_errors.append(xy_error)
+    aruco_ct_errors_all += list(aruco_crosstrack)
+    aruco_yaw_errors_all += list(aruco_yaw)
+    aruco_xy_errors_all += list(xy_error)
+
 
 print(label)
 
 #%% AFFICHAGE
-fig, ax = plt.subplots(1,1)
+plt.close('all')
 
 n = 300
 
+
+fig, ax = plt.subplots(1,1)
+
+n = len(x)
+
 for i in range(n):
-    ax.plot([y[i],y_a[i]], [-x[i],-x_a[i]], '-')
+    ax.plot([y[i],y_m[i]], [-x[i],-x_m[i]], '-')
     # ax.text(y[i]+i%2*0.02,-x[i],f'{t[i]-t[0]:.3f}')
 
 
 ax.plot(y[0:n],-np.array(x[0:n]),'.', label='aruco')
-ax.plot(y_a[0:n],-np.array(x_a[0:n]),'.',label='AMCL')
+ax.plot(y_m[0:n],-np.array(x_m[0:n]),'-',label='aruco mean')
+ax.axis('equal')
 ax.legend()
 
-localization_error = []
-for i in range(len(x)):
-    localization_error.append(np.sqrt((y[i]-y_a[i])**2+ (x[i]-x_a[i])**2))
 
 
 fig, ax1 = plt.subplots(1,1)
-ax1.boxplot(loca_time_delays ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
-ax1.set_title('Localization delay (second)')
-ax1.legend()
+ax1.boxplot(aruco_xy_errors ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax1.set_title('Aruco position error (meter)')
+
 
 fig, ax2 = plt.subplots(1,1)
-ax2.boxplot(loca_mean_time_delays,showfliers=True, showmeans=True, meanline=True, whis=1.5)
-ax2.set_title('Mean localization delay (second)')
+ax2.boxplot(aruco_yaw_errors,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax2.set_title('Aruco yaw error (radian)')
+
+fig, ax3 = plt.subplots(1,1)
+ax3.boxplot(aruco_xy_errors_all ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax3.set_title('Aruco position overall error (meter)')
+
+
+fig, ax4 = plt.subplots(1,1)
+ax4.boxplot(aruco_yaw_errors_all,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax4.set_title('Aruco yaw overall error (radian)')
+
+
+fig, ax5 = plt.subplots(1,1)
+ax5.hist(aruco_ct_errors_all,100)
+ax5.set_title('Aruco position overall error (meter)')
+
+fig, ax6 = plt.subplots(1,1)
+ax6.hist(aruco_yaw_errors_all,100)
+ax6.set_title('Aruco yaw overall error (radizn)')
+
+print(np.quantile(aruco_ct_errors_all, 0.95))
 # fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2)
 # ax1.set_title('Crosstrack error (meter)')
 # ct_dict = ax1.boxplot(crosstracks, labels=labels, showmeans=True, meanline=True, whis=1.5)

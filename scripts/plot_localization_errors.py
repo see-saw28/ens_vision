@@ -35,7 +35,7 @@ import yaml
 
 
 
-names = ['_21']
+names = ['_14']
 
 driving_mode_dict = {0:'MANUAL',1:'Pure Pursuit',2:'Stanley Controller',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FOLLOW THE GAP'}
 
@@ -109,7 +109,7 @@ for name in names :
         ref_traj_name=param['ref_traj_name']
         ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
         ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
-        x, y, yaw = path_tools.path_to_xyyaw(traj)
+        x, y, yaw, t = path_tools.path_to_xyyaw(traj, time=True)
         crosstrack, yaw, idx = calc_errors(traj, ref_traj)
 print(label)
 for name in names :
@@ -122,7 +122,7 @@ for name in names :
         traj_name=param['path_filename']
         traj = path_tools.load_path(traj_name, absolute_path=True)
         ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
-        x_a, y_a, yaw_a = path_tools.path_to_xyyaw(traj)
+        x_a, y_a, yaw_a, t_a = path_tools.path_to_xyyaw(traj, time=True)
         crosstrack_a, yaw_a, idx_a = calc_errors(traj, ref_traj)
 
 
@@ -140,11 +140,13 @@ for i in range(len(x)):
 index = []
 loca_crosstrack_errors = []
 loca_alongtrack_errors = []
+loca_time_delay = []
 for i in range(len(idx)) :
     d = np.abs(idx[i]-idx_a[max(0,i-5):min(i+5,len(idx))]).argmin()
     index.append(d+max(0,i-5))
     loca_crosstrack_errors.append(abs(np.sqrt((x[i]-x_a[d+max(0,i-5)])**2+(y[i]-y_a[d+max(0,i-5)])**2)))
     loca_alongtrack_errors.append(np.sqrt(localization_error[i]**2-loca_crosstrack_errors[i]**2))
+    loca_time_delay.append(t_a[d+max(0,i-5)]-t[i])
 
 #PLot crosstrack error of each measure
 fig, ax = plt.subplots(1,1)
@@ -155,8 +157,9 @@ for i in range(n):
     ax.plot([y_a[i],ref_y[idx_a[i]]], [x_a[i],ref_x[idx_a[i]]], 'g-')
 
 ax.plot(y[0:n],x[0:n],'.')
+ax.plot(y_a[0:n],x_a[0:n],'.')
 ax.plot(ref_y,ref_x,'.')
-
+ax.set_title('Crosstrack error')
 #Plot global error
 fig, ax1 = plt.subplots(1,1)
 
@@ -168,7 +171,7 @@ for i in range(n):
 ax1.plot(y[0:n],-np.array(x[0:n]),'.', label='aruco')
 ax1.plot(y_a[0:n],-np.array(x_a[0:n]),'.',label='AMCL')
 ax1.legend()
-ax1.set_title('Localization error')
+ax1.set_title('Global localization error')
 
 #Plot crosstrack error
 fig, ax2 = plt.subplots(1,1)
@@ -187,35 +190,13 @@ ax2.set_title('Crosstrack localization error')
 
 
 #Box plot
-fig, ax3 = plt.subplots(1,1)
+fig, [ax3,ax4] = plt.subplots(1,2)
 ax3.boxplot([localization_error,loca_crosstrack_errors, loca_crosstrack_errors], labels=['Global error', 'Crosstrack error', 'Alongtrack error'] ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
-ax3.set_title('Localization error')
+ax3.set_title('Localization error (meter)')
+
+
+ax4.boxplot(loca_time_delay, labels=['Global time delay'] ,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax4.set_title('Localization delay (second)')
 
 
 
-
-# fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2)
-# ax1.set_title('Crosstrack error (meter)')
-# ct_dict = ax1.boxplot(crosstracks, labels=labels, showmeans=True, meanline=True, whis=1.5)
-# ax2.set_title('Yaw error (radian)')
-# yaw_dict = ax2.boxplot(yaws, labels = labels,showfliers=True, showmeans=True, meanline=True, whis=1.5)
-
-# for name in names :
-#     with open(rospack.get_path('ens_vision')+f'/tests/{name}_amcl.yaml') as file:
-#         # The FullLoader parameter handles the conversion from YAML
-#         # scalar values to Python the dictionary format
-#         param = yaml.load(file, Loader=yaml.FullLoader)
-#         label = driving_mode_dict[param['driving_mode']] #+ f" at {param['speed']}m/s"
-#         labels_amcl.append(label)
-#         traj_name=param['path_filename']
-#         traj = path_tools.load_path(traj_name, absolute_path=True)
-#         ref_traj_name=param['ref_traj_name']
-#         ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
-#         crosstrack, yaw = calc_errors(traj, ref_traj)
-#         crosstracks_amcl.append(crosstrack)
-#         yaws_amcl.append(yaw)
-
-# ax3.set_title('Crosstrack error AMCL (meter)')
-# ct_dict = ax3.boxplot(crosstracks_amcl, labels=labels_amcl, showmeans=True, meanline=True, whis=1.5)
-# ax4.set_title('Yaw error AMCL (radian)')
-# yaw_dict = ax4.boxplot(yaws_amcl, labels = labels_amcl,showfliers=True, showmeans=True, meanline=True, whis=1.5)

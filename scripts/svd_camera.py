@@ -3,52 +3,40 @@
 """
 Created on Mon Jun 13 15:20:41 2022
 
-@author: student
-"""
-# -*- coding: utf-8 -*-
-"""
-Created on Thu May 19 22:50:21 2022
-
-https://hal.inria.fr/inria-00073710/document
-
 @author: paulg
 """
 import numpy as np
+import rospy
+import tf
+from geometry_msgs.msg import PointStamped
+from tf.transformations import quaternion_from_matrix
+from ens_vision import tf_tools
 
 
-di=np.array([[11.157,-0.089357,0.80816],[13.368, 1.6957, 2.7892],[12.681,2.2539,5.0729]])
+def svd_transform(points_A_init,points_B_init):
 
-# si=np.array([[1,3,2],[1, 1, 3],[1,1,1]])
-si=np.array([[1,0,1],[3, 2, 3],[2,3,5]])
+    points_A = points_A_init.reshape((len(points_A_init),3,1))
+    points_B = points_B_init.reshape((len(points_B_init),3,1))
 
 
-# di=np.array([[10,0,1],[12, 2, 1],[11,3,1]])
-# d=di.reshape((3,3,1))
-# # si=np.array([[1,3,2],[1, 1, 3],[1,1,1]])
-# si=np.array([[1,0,1],[3, 2, 1],[2,3,1]])
-# s=si.reshape((3,3,1))
-def svd_transform(si,di):
-    s=si.reshape((len(si),3,1))
-    d=di.reshape((len(di),3,1))
-    s_b=np.mean(s,axis=0)
-    d_b=np.mean(d,axis=0)
+    points_A_barycentre = np.mean(points_A,axis=0)
+    points_B_barycentre = np.mean(points_B,axis=0)
 
-    d_c=d-d_b
-    s_c=s-s_b
+    points_A_centered = points_A-points_A_barycentre
+    points_B_centered = points_B-points_B_barycentre
 
-    H=np.zeros((3,3))
-    for i in range(len(s)):
-        H+=np.dot(s_c[i],np.transpose(d_c[i]))
+    # Compute the covariance matrix
+    H = np.zeros((3,3))
+    for i in range(len(points_A)):
+        H+=np.dot(points_A_centered[i],np.transpose(points_B_centered[i]))
 
-    # H=H/len(s)
 
-    # H=np.dot(s_c.reshape((3,3)),np.transpose(d_c.reshape(3,3)))
-
+    # SVD decomposition
     U,S,V = np.linalg.svd(H)
 
     V=np.transpose(V)
 
-
+    # rotation matrix
     R=np.dot(V,np.transpose(U))
     # print(R)
     if(np.linalg.det(R)<0):
@@ -58,35 +46,16 @@ def svd_transform(si,di):
         # print(V_p)
         R=np.dot(V_p,np.transpose(U))
 
-
-    T=d_b-np.dot(R,s_b)
-
-    df=np.transpose(np.dot(R,np.transpose(si))+T)
-    return (R,T,df)
-
-#calculer l'erreur sur le recalage
-
-# import matplotlib.pyplot as plt
-# import yaml
-
-# a_yaml_file = open("map1.yaml")
-
-# parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader) #dico
-
-# pgm_name = parsed_yaml_file['image']
-# resolution = parsed_yaml_file['resolution']
-# xo, yo,_ = parsed_yaml_file['origin']
+    # translation matrix
+    T = points_B_barycentre-np.dot(R,points_A_barycentre)
 
 
-# with open('map1.pgm', 'rb') as pgmf:
-#     im = plt.imread(pgmf)
+    points_A_in_B = np.transpose(np.dot(R,np.transpose(points_A_init))+T)
+
+    return (R,T,points_A_in_B)
 
 
-import rospy
-import tf
-from geometry_msgs.msg import PointStamped
-from tf.transformations import quaternion_from_matrix
-from ens_vision import tf_tools
+
 
 
 frame_0='marker_0'
@@ -99,31 +68,26 @@ map_name = 'map5'
 number_of_points = 6
 
 
-# R,T,df=svd_transform(si, di)
-# rotation_matrix = np.array([[0, 0, 0, 0],
-#                            [0, 0, 0, 0],
-#                            [0, 0, 0, 0],
-#                            [0, 0, 0, 1]],
-#                            dtype=float)
-# rotation_matrix[:3, :3] = R
-# quat = quaternion_from_matrix(rotation_matrix)
-# print(quat)
-
 def callback(msg):
     global i
+
     x=msg.point.x
     y=msg.point.y
     z=0
-    si[i%number_of_points]=[x,y,z]
-    print(si)
-    di[i%number_of_points] = tl.lookupTransform('camera', f'marker_{i}', rospy.Time())[0]
-    print(di)
+
+    points_map[i%number_of_points]=[x,y,z]
+    print(points_map)
+
+    points_camera[i%number_of_points] = tl.lookupTransform('camera', f'marker_{i}', rospy.Time())[0]
+    print(points_camera)
+
     if i%number_of_points==(number_of_points-1):
 
-
-        R,T,df=svd_transform(si, di)
+        R,T,points_map_in_camera = svd_transform(points_map, points_camera)
 
         pos = T
+
+        # Compute the rotation matrix
         rotation_matrix = np.array([[0, 0, 0, 0],
                                    [0, 0, 0, 0],
                                    [0, 0, 0, 0],
@@ -131,10 +95,10 @@ def callback(msg):
                                    dtype=float)
         rotation_matrix[:3, :3] = R
         quat = quaternion_from_matrix(rotation_matrix)
-        print(R)
 
 
-        check_svd = di - df
+        # Compute the error of the transformation
+        check_svd = points_camera - points_map_in_camera
 
         error = np.sqrt(check_svd[:,0]**2+check_svd[:,1]**2+check_svd[:,2]**2)
 
@@ -149,13 +113,14 @@ def callback(msg):
 
 
     i+=1
-    rospy.loginfo(f'Pick the marker_{i}')
+    rospy.loginfo(f'Pick the marker_{i%number_of_points}')
 
 
 if __name__ == '__main__':
     i=0
-    di=np.zeros((number_of_points,3))
-    si=np.zeros((number_of_points,3))
+    points_camera=np.zeros((number_of_points,3))
+    points_map=np.zeros((number_of_points,3))
+
     rospy.init_node('svd')
     tl = tf.TransformListener()
 
@@ -169,6 +134,6 @@ if __name__ == '__main__':
 
             pass
 
-    # R,T,df=svd_transform(si, di)
+
 
 

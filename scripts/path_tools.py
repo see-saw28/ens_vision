@@ -157,7 +157,7 @@ def mcp_to_path(mcp):
     return path
 
 
-def xy_to_path(X,Y):
+def xy_to_path(X,Y,YAW=[]):
     path = Path()
     path.header.frame_id = 'map'
 
@@ -170,7 +170,10 @@ def xy_to_path(X,Y):
         pose.pose.position.x = X[i]
         pose.pose.position.y = Y[i]
 
-        yaw = np.arctan2(Y[(i+1)%len(Y)]-Y[i], X[(i+1)%len(Y)]-X[i])
+        if len(YAW)==0 :
+            yaw = np.arctan2(Y[(i+1)%len(Y)]-Y[i], X[(i+1)%len(Y)]-X[i])
+        else :
+            yaw = YAW[i]
 
         quat = quaternion_from_euler(0,0,yaw)
 

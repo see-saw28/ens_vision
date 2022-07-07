@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 30 17:01:02 2022
-
-@author: student
-"""
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 28 09:29:26 2022
+Created on Fri Jul  1 15:23:13 2022
 
 @author: student
 """
@@ -26,7 +19,7 @@ Created on Wed Jun 22 13:39:48 2022
 
 @author: student
 """
-import path_tools
+from ens_vision import path_tools
 import matplotlib.pyplot as plt
 import numpy as np
 import rospkg
@@ -35,9 +28,39 @@ import yaml
 
 plt.close('all')
 
-names = ['_14']
+# #PP
+# names = ['_11', '_12','_13','_14','_15']
 
-driving_mode_dict = {0:'MANUAL',1:'Pure Pursuit',2:'Stanley Controller',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FOLLOW THE GAP'}
+# #SC cannot achieve 5 laps at 1.5m/s
+# names = ['_16','_17','_18']
+
+# #LCS
+# names = ['_19','_20','_21','_22']
+
+# #DWA
+# names = ['_23','_24','_25','_26']
+
+# #0.75
+# names = ['_11','_16','_19','_23']
+
+# #1.0
+# names = ['_12','_17','_20','_24']
+
+# #1.25
+# names = ['_13','_18','_21','_25']
+
+# #1.5
+# names = ['_15','_14','_22','_26']
+
+# # Aruco vs AMCL localization
+# names = ['_29', '_14']
+
+# #FTG
+# names = ['_30', '_31', '_32', '_33', '_34']
+
+names = ['_26']
+
+driving_mode_dict = {0:'MANUAL',1:'PP',2:'SC',3:'LCS',4:'DWA',5:'MOVE BASE',6:'FTG'}
 
 crosstracks = []
 yaws = []
@@ -97,68 +120,73 @@ def calc_errors(traj, ref_path):
 
     return crosstrack_errors, yaw_errors, idx_errors
 
+
 for name in names :
     with open(rospack.get_path('ens_vision')+f'/tests/test_aruco{name}.yaml') as file:
         # The FullLoader parameter handles the conversion from YAML
         # scalar values to Python the dictionary format
         param = yaml.load(file, Loader=yaml.FullLoader)
-        label = driving_mode_dict[param['driving_mode']] #+ f" at {param['speed']}m/s"
+        label = driving_mode_dict[param['driving_mode']] + f" at {param['speed']}m/s"
         labels.append(label)
         traj_name=param['path_filename']
         traj = path_tools.load_path(traj_name, absolute_path=True)
         ref_traj_name=param['ref_traj_name']
         ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
         ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
-        x, y, yaw = path_tools.path_to_xyyaw(traj)
+        x, y, yaw, t = path_tools.path_to_xyyaw(traj, time=True)
         crosstrack, yaw, idx = calc_errors(traj, ref_traj)
+        crosstracks.append(crosstrack)
+        yaws.append(yaw)
+
+
+
 
 for name in names :
     with open(rospack.get_path('ens_vision')+f'/tests/test_amcl{name}.yaml') as file:
         # The FullLoader parameter handles the conversion from YAML
         # scalar values to Python the dictionary format
         param = yaml.load(file, Loader=yaml.FullLoader)
-        label = driving_mode_dict[param['driving_mode']] #+ f" at {param['speed']}m/s"
-        labels.append(label)
+        label = driving_mode_dict[param['driving_mode']] + f" at {param['speed']}m/s"
+        labels_amcl.append(label)
         traj_name=param['path_filename']
         traj = path_tools.load_path(traj_name, absolute_path=True)
-        ref_x, ref_y, ref_yaw = path_tools.path_to_xyyaw(ref_traj)
-        x_a, y_a, yaw_a = path_tools.path_to_xyyaw(traj)
-        crosstrack, yaw, idx_a = calc_errors(traj, ref_traj)
+        ref_traj_name=param['ref_traj_name']
+        ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
+        crosstrack_a, yaw_a, idx_a = calc_errors(traj, ref_traj)
+        x_a, y_a, yaw_a, t_a = path_tools.path_to_xyyaw(traj, time=True)
+        crosstracks_amcl.append(crosstrack_a)
+        yaws_amcl.append(yaw_a)
 
+print(labels)
+#%% AFFICHAGE
+
+fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2)
+ax1.set_title('Crosstrack error (meter)')
+ct_dict = ax1.boxplot(crosstracks, labels=labels, showmeans=True, meanline=True, whis=1.5)
+ax2.set_title('Yaw error (radian)')
+yaw_dict = ax2.boxplot(yaws, labels = labels,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+
+ax3.set_title('Crosstrack error AMCL (meter)')
+ct_dict_a = ax3.boxplot(crosstracks_amcl, labels=labels_amcl, showmeans=True, meanline=True, whis=1.5)
+ax4.set_title('Yaw error AMCL (radian)')
+yaw_dict_a = ax4.boxplot(yaws_amcl, labels = labels_amcl,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+
+top_cap = ct_dict_a['caps'][1].get_ydata()[0]
+Q3 = ct_dict_a['whiskers'][1].get_ydata()[0]
 fig, ax = plt.subplots(1,1)
 
-for i in range(260):
-    ax.plot([y[i],ref_y[idx[i]]], [x[i],ref_x[idx[i]]], 'b-')
+n=len(x)
+for i in range(n):
+    if crosstrack_a[i]>Q3:
+        c='r-'
+        ax.plot([y_a[i],ref_y[idx[i]]], [-x_a[i],-ref_x[idx[i]]], c)
+    else :
+        c='g-'
 
-for i in range(260):
-    ax.plot([y_a[i],ref_y[idx_a[i]]], [x_a[i],ref_x[idx_a[i]]], 'g-')
 
-ax.plot(y[0:260],x[0:260],'.')
-ax.plot(ref_y,ref_x,'.')
+# for i in range(260):
+#     ax.plot([y_a[i],ref_y[idx_a[i]]], [x_a[i],ref_x[idx_a[i]]], 'b-')
 
-
-# fig, [[ax1,ax2],[ax3,ax4]] = plt.subplots(2,2)
-# ax1.set_title('Crosstrack error (meter)')
-# ct_dict = ax1.boxplot(crosstracks, labels=labels, showmeans=True, meanline=True, whis=1.5)
-# ax2.set_title('Yaw error (radian)')
-# yaw_dict = ax2.boxplot(yaws, labels = labels,showfliers=True, showmeans=True, meanline=True, whis=1.5)
-
-# for name in names :
-#     with open(rospack.get_path('ens_vision')+f'/tests/{name}_amcl.yaml') as file:
-#         # The FullLoader parameter handles the conversion from YAML
-#         # scalar values to Python the dictionary format
-#         param = yaml.load(file, Loader=yaml.FullLoader)
-#         label = driving_mode_dict[param['driving_mode']] #+ f" at {param['speed']}m/s"
-#         labels_amcl.append(label)
-#         traj_name=param['path_filename']
-#         traj = path_tools.load_path(traj_name, absolute_path=True)
-#         ref_traj_name=param['ref_traj_name']
-#         ref_traj = path_tools.mcp_to_path(path_tools.load_mcp(ref_traj_name))
-#         crosstrack, yaw = calc_errors(traj, ref_traj)
-#         crosstracks_amcl.append(crosstrack)
-#         yaws_amcl.append(yaw)
-
-# ax3.set_title('Crosstrack error AMCL (meter)')
-# ct_dict = ax3.boxplot(crosstracks_amcl, labels=labels_amcl, showmeans=True, meanline=True, whis=1.5)
-# ax4.set_title('Yaw error AMCL (radian)')
-# yaw_dict = ax4.boxplot(yaws_amcl, labels = labels_amcl,showfliers=True, showmeans=True, meanline=True, whis=1.5)
+ax.plot(y_a[0:n],-np.array(x_a[0:n]),'.')
+ax.plot(ref_y,-np.array(ref_x),'.')
+ax.set_aspect(aspect = 'equal')
