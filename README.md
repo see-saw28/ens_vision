@@ -59,7 +59,7 @@ https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linu
 
 # SVD transform
 
-Compute the transformation T and R between the map frame and the camera frame. pos_camera = R*pos_map + T with pos a column vector x,y,z
+Compute the transformation T and R between the map frame and the camera frame. pos_camera = R*pos_map + T with pos a column vector x,y,z. Python file `svd_camera.py`, points in the map frame are collected with the `Publish Point` tool of RViz.
 
 ### Subscribed topics
 
